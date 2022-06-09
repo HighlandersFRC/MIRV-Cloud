@@ -20,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-HEALTH_STATES = ["Unhealthy", "Degraded", "Healthy"]
+HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
 ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop"]
 ROVER_STATUSES = ["available", "unavailable"]
 
@@ -67,24 +67,27 @@ def read_item(q: Union[str, None] = None):
     ]
 
 
-@app.get("/rovers/{rover_id}")
-def read_item(rover_id: str, q: Union[str, None] = None):
+@app.get("/rovers/{roverId}")
+def read_item(roverId: str, q: Union[str, None] = None):
     return {
-        "rover_id": rover_id,
+        "roverId": roverId,
         "state": ROVER_STATES[0],
         "status": ROVER_STATUSES[0],
         "battery": random.randint(0, 100),
         "health": {
-            "electronics": HEALTH_STATES[random.randint(0, 2)],
-            "drivetrain": HEALTH_STATES[random.randint(0, 2)],
-            "intake": HEALTH_STATES[random.randint(0, 2)],
-            "sensors": HEALTH_STATES[random.randint(0, 2)],
-            "garage": HEALTH_STATES[random.randint(0, 2)],
-            "power": HEALTH_STATES[random.randint(0, 2)],
-            "general": HEALTH_STATES[random.randint(0, 2)],
+            "electronics": HEALTH_STATES[random.randint(0, 3)],
+            "drivetrain": HEALTH_STATES[random.randint(0, 3)],
+            "intake": HEALTH_STATES[random.randint(0, 3)],
+            "sensors": HEALTH_STATES[random.randint(0, 3)],
+            "garage": HEALTH_STATES[random.randint(0, 3)],
+            "power": HEALTH_STATES[random.randint(0, 3)],
+            "general": HEALTH_STATES[random.randint(0, 3)],
         },
-        "metrics": {
-            "location": [ROVER_LOCATION[0] + get_scaled_random_number(-1, 1, scale=0.0001, digits=6), ROVER_LOCATION[1] + get_scaled_random_number(-1, 1, scale=0.0001, digits=6)],
+        "telemetry": {
+            "location": {
+                "long": ROVER_LOCATION[0] + get_scaled_random_number(-1, 1, scale=0.0001, digits=6),
+                "lat": ROVER_LOCATION[1] + get_scaled_random_number(-1, 1, scale=0.0001, digits=6)
+            },
             "heading": get_scaled_random_number(0, 360, digits=2),
             "speed": get_scaled_random_number(0, 20, digits=2),
         }
