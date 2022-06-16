@@ -1,20 +1,15 @@
-import socketio
-import eventlet
-from eventlet import wsgi
-
 HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
 ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop"]
 ROVER_STATUSES = ["available", "unavailable"]
 ROVER_LOCATION = [-104.969523, 40.474083]
 
 class Rover:
-    def __init__(self, id: str):
-        self.sio = socketio.Server()
-        self.app = socketio.WSGIApp(self.sio)
-        self.start()
-        self.roverID = id
+
+    def __init__(self, rid: str, sid: str):
+        self.roverID = rid
+        self.sid = sid
         self.rover_state = {
-            "roverID": id,
+            "roverID": self.roverID,
             "state": ROVER_STATES[0],
             "status": ROVER_STATUSES[0],
             "battery-percent": 100,
@@ -37,29 +32,19 @@ class Rover:
                 "speed": 0
             }
         }
-
     
-    def connect(self, sid):
-        print(f"Connected to sid: {sid}")
-        return True
-    
-    
-    def data(self, data):
+    def update(self, data):
         if data != None:
             for data_key in data:
                 for rover_key in self.rover_state:
                     if data_key == rover_key:
                         self.rover_state[rover_key] = data[rover_key]
 
-    
-    def disconnect(self, sid):
-        print(f"Disconnected sid: {sid}")
-
-    def start(self):
-        wsgi.server(eventlet.listen(("172.250.250.76", 7070)), self.app)
-
-    def getID(self):
+    def getRID(self):
         return self.roverID
+
+    def getSID(self):
+        return self.sid
 
     def getFull(self):
         return self.rover_state

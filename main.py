@@ -6,12 +6,39 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 from roverstate import Rover
+import eventlet
+from eventlet import wsgi
+import socketio
+eventlet.monkey_patch(thread = False)
 
 ROVERS = []
 
-rover1 = Rover("rover_1")
+sio = socketio.Server()
+wsgi_app = socketio.WSGIApp(sio)
 
-ROVERS.append(rover1)
+@sio.event
+def connect(sid, environ, auth):
+    ROVERS.append(Rover(environ["HTTP_ROVERID"], sid))
+    print(f"Connected sid: {sid}")
+    print(f"{len(ROVERS)} Rover(s) connected")
+
+@sio.event
+def data(sid, data):
+    print(f"Received {data} from sid: {sid}")
+    for r in ROVERS:
+        if r.getSID() == sid:
+            r.update(data)
+            break
+
+@sio.event
+def disconnect(sid):
+    for i in range(len(ROVERS)):
+        if ROVERS[i].getSID() == sid:
+            ROVERS.pop(i)
+            break
+    print(f"Disconnected sid: {sid}")
+
+wsgi.server(eventlet.listen(("172.250.250.76", 7070)), wsgi_app)
 
 app = FastAPI()
 
@@ -61,7 +88,7 @@ def read_item(q: Union[str, None] = None):
 @app.get("/rovers/{roverID}")
 def read_item(roverID: str, q: Union[str, None] = None):
     for r in ROVERS:
-        if r.getID() == roverID:
+        if r.getRID() == roverID:
             return r.getFull()
 
 
