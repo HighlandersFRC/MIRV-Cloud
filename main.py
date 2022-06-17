@@ -1,8 +1,9 @@
 from hashlib import sha256
+from http.client import HTTPException
 import random
 import datetime
 from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -10,18 +11,19 @@ from roverstate import Rover
 import eventlet
 from eventlet import wsgi
 import socketio
+import os
 
 ROVERS = []
 
-SHA256_PASS = 0x5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8
+PASS = os.getenv("PASSWORD")
 
-sio = socketio.Server()
-wsgi_app = socketio.WSGIApp(sio)
+sio = socketio.AsyncServer(async_mode = "asgi")
+asgi_app = socketio.ASGIApp(sio)
 
 @sio.event
 def connect(sid, environ, auth):
     ROVERS.append(Rover(environ["HTTP_ROVERID"], sid))
-    if int(sha256(auth["password"].encode("utf-8")).hexdigest(), 16) != SHA256_PASS:
+    if auth["password"] != PASS:
         raise ConnectionRefusedError("Authentication failed")
     print(f"Connected sid: {sid}")
     print(f"{len(ROVERS)} Rover(s) connected")
@@ -38,11 +40,9 @@ def data(sid, data):
 def disconnect(sid):
     for i in range(len(ROVERS)):
         if ROVERS[i].sid == sid:
-            #ROVERS.pop(i)
+            ROVERS.pop(i)
             break
     print(f"Disconnected sid: {sid}")
-
-wsgi.server(eventlet.listen(("172.250.250.76", 7070)), wsgi_app)
 
 app = FastAPI()
 
@@ -55,6 +55,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/ws", asgi_app)
 
 HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
 ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop"]
@@ -94,6 +96,7 @@ def read_item(roverID: str, q: Union[str, None] = None):
     for r in ROVERS:
         if r.roverID == roverID:
             return r.rover_state
+    raise HTTPException(status_code = 404, detail = f'Rover "{roverID}" does not exist')
 
 
 @app.post("/rovers/connect")
@@ -112,4 +115,4 @@ def connect_to_rover(connection_request: ConnectionRequest):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host = "127.0.0.1", port = 8080)
+    uvicorn.run(app, host = "172.250.250.76", port = 8080)
