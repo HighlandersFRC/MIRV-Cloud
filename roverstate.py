@@ -40,15 +40,6 @@ class Rover:
                     if data_key == rover_key:
                         self.rover_state[rover_key] = data[rover_key]
 
-    def getRID(self):
-        return self.roverID
-
-    def getSID(self):
-        return self.sid
-
-    def getFull(self):
-        return self.rover_state
-
     def getGeneral(self):
         return {
             "roverID": self.rover_state["roverID"],

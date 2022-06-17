@@ -1,3 +1,4 @@
+from hashlib import sha256
 import random
 import datetime
 from typing import Union
@@ -9,9 +10,10 @@ from roverstate import Rover
 import eventlet
 from eventlet import wsgi
 import socketio
-eventlet.monkey_patch(thread = False)
 
 ROVERS = []
+
+SHA256_PASS = 0x5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8
 
 sio = socketio.Server()
 wsgi_app = socketio.WSGIApp(sio)
@@ -19,6 +21,8 @@ wsgi_app = socketio.WSGIApp(sio)
 @sio.event
 def connect(sid, environ, auth):
     ROVERS.append(Rover(environ["HTTP_ROVERID"], sid))
+    if int(sha256(auth["password"].encode("utf-8")).hexdigest(), 16) != SHA256_PASS:
+        raise ConnectionRefusedError("Authentication failed")
     print(f"Connected sid: {sid}")
     print(f"{len(ROVERS)} Rover(s) connected")
 
@@ -26,15 +30,15 @@ def connect(sid, environ, auth):
 def data(sid, data):
     print(f"Received {data} from sid: {sid}")
     for r in ROVERS:
-        if r.getSID() == sid:
+        if r.sid == sid:
             r.update(data)
             break
 
 @sio.event
 def disconnect(sid):
     for i in range(len(ROVERS)):
-        if ROVERS[i].getSID() == sid:
-            ROVERS.pop(i)
+        if ROVERS[i].sid == sid:
+            #ROVERS.pop(i)
             break
     print(f"Disconnected sid: {sid}")
 
@@ -88,8 +92,8 @@ def read_item(q: Union[str, None] = None):
 @app.get("/rovers/{roverID}")
 def read_item(roverID: str, q: Union[str, None] = None):
     for r in ROVERS:
-        if r.getRID() == roverID:
-            return r.getFull()
+        if r.roverID == roverID:
+            return r.rover_state
 
 
 @app.post("/rovers/connect")
