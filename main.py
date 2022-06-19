@@ -17,8 +17,9 @@ ROVERS = []
 
 PASS = os.getenv("PASSWORD")
 
-sio = socketio.AsyncServer(async_mode = "asgi")
+sio = socketio.AsyncServer(async_mode="asgi")
 asgi_app = socketio.ASGIApp(sio)
+
 
 @sio.event
 def connect(sid, environ, auth):
@@ -28,6 +29,7 @@ def connect(sid, environ, auth):
     print(f"Connected sid: {sid}")
     print(f"{len(ROVERS)} Rover(s) connected")
 
+
 @sio.event
 def data(sid, data):
     print(f"Received {data} from sid: {sid}")
@@ -36,6 +38,7 @@ def data(sid, data):
             r.update(data)
             break
 
+
 @sio.event
 def disconnect(sid):
     for i in range(len(ROVERS)):
@@ -43,6 +46,7 @@ def disconnect(sid):
             ROVERS.pop(i)
             break
     print(f"Disconnected sid: {sid}")
+
 
 app = FastAPI()
 
@@ -96,7 +100,8 @@ def read_item(roverID: str, q: Union[str, None] = None):
     for r in ROVERS:
         if r.roverID == roverID:
             return r.rover_state
-    raise HTTPException(status_code = 404, detail = f'Rover "{roverID}" does not exist')
+    raise HTTPException(
+        status_code=404, detail=f'Rover "{roverID}" does not exist')
 
 
 @app.post("/rovers/connect")
@@ -115,4 +120,4 @@ def connect_to_rover(connection_request: ConnectionRequest):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host = "172.250.250.76", port = 8080)
+    uvicorn.run(app, host="192.168.1.3", port=8080)
