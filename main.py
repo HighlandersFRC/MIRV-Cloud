@@ -16,6 +16,8 @@ import os
 ROVERS = []
 
 PASS = os.getenv("PASSWORD")
+HOST = os.getenv("HOST")
+PORT = os.getenv("PORT")
 
 sio = socketio.AsyncServer(async_mode = "asgi")
 asgi_app = socketio.ASGIApp(sio)
@@ -115,4 +117,4 @@ def connect_to_rover(connection_request: ConnectionRequest):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host = "172.250.250.76", port = 8080)
+    uvicorn.run(app, host = HOST, port = PORT)
