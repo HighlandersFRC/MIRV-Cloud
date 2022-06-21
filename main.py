@@ -31,14 +31,17 @@ app.add_middleware(
 
 
 PASS = os.getenv("PASSWORD")
-HOST = os.getenv("HOST")
-PORT = os.getenv("PORT")
+# HOST = os.getenv("HOST")
+# PORT = os.getenv("PORT")
+
+HOST = "172.250.250.76"
+PORT = 8080
 
 sio = socketio.AsyncServer(async_mode="asgi")
 asgi_app = socketio.ASGIApp(sio)
 
 
-@sm.on('join')
+@sm.on('connect')
 def handle_connect(sid, environ, auth):
     ROVERS.append(Rover(environ["HTTP_ROVERID"], sid))
     if auth["password"] != PASS:
@@ -56,7 +59,7 @@ def handle_data(sid, data):
             break
 
 
-@sm.on('leave')
+@sm.on('disconnect')
 def handle_disconnect(sid):
     for i in range(len(ROVERS)):
         if ROVERS[i].sid == sid:
@@ -98,7 +101,7 @@ def read_item(q: Union[str, None] = None):
     return [r.getGeneral() for r in ROVERS]
 
 
-@app.get("/rovers/{roverId}")
+@app.get("/rovers/{roverID}")
 def read_item(roverID: str, q: Union[str, None] = None):
     for r in ROVERS:
         if r.roverID == roverID:

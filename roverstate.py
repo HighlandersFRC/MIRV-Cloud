@@ -24,21 +24,25 @@ class Rover:
                 "general": HEALTH_STATES[2]
             },
             "telemetry": {
-                "location": {
-                    "long": ROVER_LOCATION[0],
-                    "lat": ROVER_LOCATION[1]
-                },
+                "long": ROVER_LOCATION[0],
+                "lat": ROVER_LOCATION[1],
                 "heading": 90,
                 "speed": 0
             }
         }
     
     def update(self, data):
-        if data != None:
+        if data:
             for data_key in data:
                 for rover_key in self.rover_state:
-                    if data_key == rover_key:
+                    if data_key == rover_key and not isinstance(self.rover_state[rover_key], dict):
                         self.rover_state[rover_key] = data[rover_key]
+                for health_key in self.rover_state["health"]:
+                    if data_key == health_key:
+                        self.rover_state["health"][health_key] = data[data_key]
+                for tel_key in self.rover_state["telemetry"]:
+                    if data_key == tel_key:
+                        self.rover_state["telemetry"][tel_key] = data[data_key]
 
     def getGeneral(self):
         return {
