@@ -118,5 +118,5 @@ def connect_to_rover(connection_request: ConnectionRequest):
 
 # POST: Send command?
 
-if __name__ == "__main__":
-    uvicorn.run(app, port=PORT)  # , host=HOST
+# if __name__ == "__main__":
+#     uvicorn.run(app, port=PORT)  # , host=HOST
