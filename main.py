@@ -9,9 +9,6 @@ from fastapi_socketio import SocketManager
 from pydantic import BaseModel
 import uvicorn
 from roverstate import Rover
-import eventlet
-from eventlet import wsgi
-import socketio
 import os
 
 ROVERS = []
@@ -34,11 +31,8 @@ PASS = os.getenv("PASSWORD")
 # HOST = os.getenv("HOST")
 # PORT = os.getenv("PORT")
 
-HOST = "172.250.250.76"
-PORT = 8080
-
-sio = socketio.AsyncServer(async_mode="asgi")
-asgi_app = socketio.ASGIApp(sio)
+# HOST = "192.168.1.3"
+PORT = 80
 
 
 @sm.on('connect')
@@ -125,4 +119,4 @@ def connect_to_rover(connection_request: ConnectionRequest):
 # POST: Send command?
 
 if __name__ == "__main__":
-    uvicorn.run(app, host = HOST, port = PORT)
+    uvicorn.run(app, port=PORT)  # , host=HOST

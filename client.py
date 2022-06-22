@@ -1,7 +1,7 @@
 import socketio
 
 HOST = "192.168.1.3"
-PORT = 8080
+PORT = 80
 
 sio = socketio.Client()
 
