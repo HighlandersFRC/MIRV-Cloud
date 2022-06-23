@@ -1,19 +1,38 @@
 import socketio
+import random
+import json
 
-HOST = "20.221.114.229"
+# HOST = "20.221.114.229"
+HOST = "127.0.0.1"
 PORT = 80
 
 sio = socketio.Client()
 
 
-@sio.event
+@sio.on('connect')
 def connect():
-    print(f"Connected with sid: {sio.sid}")
+    print('connection established')
 
 
-@sio.event
+@sio.on('message')
+def message(data):
+    print('message received with ', data)
+    # sio.emit('my response', {'response': 'my response'})
+
+
+@sio.on('exception')
+def exception(data):
+    print('exception received with ', data)
+    # sio.emit('my response', {'response': 'my response'})
+
+
+@sio.on('disconnect')
 def disconnect():
-    print("Disconnected")
+    print('disconnected from server')
+
+
+def get_scaled_random_number(start, end, scale=1, digits=None):
+    return round((random.random() * abs(end - start) + start)*scale, digits)
 
 
 def send(type: str, msg):
@@ -21,10 +40,35 @@ def send(type: str, msg):
 
 
 print(f"http://{HOST}:{PORT}/ws")
-sio.connect(f"http://{HOST}:{PORT}/ws", headers={"roverID": "rover_1"},
+sio.connect(f"http://{HOST}:{PORT}/ws", headers={"roverId": "rover_6"},
             auth={"password": None}, socketio_path="/ws/socket.io")
-running = 0
-while running < 1000:
-    send("data", {"electronics": "degraded"})
-    sio.sleep(1)
-    running += 1
+send("data", {
+    "roverId": "rover_6",
+    "state": "docked",
+    "status": "available",
+    "battery-percent": 12,
+    "battery-voltage": 18,
+    "health": {
+        "electronics": "healthy",
+        "drivetrain": "healthy",
+        "intake": "healthy",
+        "sensors": "healthy",
+        "garage": "healthy",
+        "power": "healthy",
+        "general": "healthy"
+    },
+    "telemetry": {
+        "lat": 39,
+        "long": -105,
+        "heading": 90,
+        "speed": 0
+    }
+})
+
+# sio.wait()
+# sio.disconnect()
+# running = 0
+# while running < 1000:
+#     send("data", {"electronics": "degraded"})
+#     sio.sleep(1)
+#     running += 1

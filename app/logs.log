@@ -1,0 +1,108 @@
+[2022-06-22 17:30:40,756756] ERROR [25400] - Unable to read in ROVER_STATE_SCHEMA from ./rover_state_schema.json because [Errno 2] No such file or directory: './rover_state_schema.json'
+[2022-06-22 17:30:40,758758] INFO [25400] - Started server process [47540]
+[2022-06-22 17:30:40,759759] INFO [25400] - Waiting for application startup.
+[2022-06-22 17:30:40,759759] INFO [25400] - Application startup complete.
+[2022-06-22 17:30:40,759759] INFO [25400] - Uvicorn running on http://0.0.0.0:80 (Press CTRL+C to quit)
+[2022-06-22 17:30:43,427427] INFO [25400] - 127.0.0.1:53395 - "GET /ws/socket.io/?transport=polling&EIO=4&t=1655940643.422627 HTTP/1.1" 200
+[2022-06-22 17:30:43,433433] INFO [25400] - Connected sid: xMDDH8RDBfUrRAkvAAAB
+[2022-06-22 17:30:43,433433] INFO [25400] - 127.0.0.1:53395 - "POST /ws/socket.io/?transport=polling&EIO=4&sid=8TR1_COkzeEa2N9vAAAA HTTP/1.1" 200
+[2022-06-22 17:30:43,435435] INFO [25400] - 127.0.0.1:53396 - "GET /ws/socket.io/?transport=polling&EIO=4&sid=8TR1_COkzeEa2N9vAAAA&t=1655940643.429625 HTTP/1.1" 200
+[2022-06-22 17:30:43,439439] INFO [25400] - Disconnected sid: xMDDH8RDBfUrRAkvAAAB
+[2022-06-22 17:30:43,439439] INFO [25400] - 127.0.0.1:53395 - "POST /ws/socket.io/?transport=polling&EIO=4&sid=8TR1_COkzeEa2N9vAAAA HTTP/1.1" 200
+[2022-06-22 17:30:48,003003] INFO [25400] - Shutting down
+[2022-06-22 17:30:48,113113] INFO [25400] - Waiting for connections to close. (CTRL+C to force quit)
+[2022-06-22 17:30:48,220220] INFO [25400] - Finished server process [47540]
+[2022-06-22 17:30:48,220220] INFO [25400] - ASGI 'lifespan' protocol appears unsupported.
+[2022-06-22 17:30:48,220220] INFO [25400] - 127.0.0.1:53396 - "GET /ws/socket.io/?transport=polling&EIO=4&sid=8TR1_COkzeEa2N9vAAAA&t=1655940643.4362037 HTTP/1.1" 400
+[2022-06-22 17:30:48,221221] ERROR [25400] - Exception in callback handle_http.<locals>.retrieve_exception(<Task cancell...erver.py:104>>) at C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\_handlers\http.py:56
+handle: <Handle handle_http.<locals>.retrieve_exception(<Task cancell...erver.py:104>>) at C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\_handlers\http.py:56>
+Traceback (most recent call last):
+  File "C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\server.py", line 107, in handler
+    await handle_http(
+  File "C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\_handlers\http.py", line 87, in handle_http
+    await connection_lost
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Program Files\Python39\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\_handlers\http.py", line 58, in retrieve_exception
+    exc = task.exception()
+asyncio.exceptions.CancelledError
+[2022-06-22 17:30:48,221221] ERROR [25400] - Exception in callback _SelectorSocketTransport._call_connection_lost(None)
+handle: <Handle _SelectorSocketTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Program Files\Python39\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Program Files\Python39\lib\asyncio\selector_events.py", line 978, in _call_connection_lost
+    super()._call_connection_lost(exc)
+  File "C:\Program Files\Python39\lib\asyncio\selector_events.py", line 736, in _call_connection_lost
+    self._protocol.connection_lost(exc)
+  File "C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\protocols\http\h11_impl.py", line 117, in connection_lost
+    self.on_connection_lost()
+  File "C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\_handlers\http.py", line 42, in <lambda>
+    on_connection_lost=lambda: connection_lost.set_result(True),
+asyncio.exceptions.InvalidStateError: invalid state
+[2022-06-22 17:34:49,129129] INFO [47832] - Started server process [17760]
+[2022-06-22 17:34:49,129129] INFO [47832] - Waiting for application startup.
+[2022-06-22 17:34:49,130130] INFO [47832] - Application startup complete.
+[2022-06-22 17:34:52,108108] INFO [47832] - Shutting down
+[2022-06-22 17:34:52,214214] INFO [47832] - Waiting for application shutdown.
+[2022-06-22 17:34:52,214214] INFO [47832] - Application shutdown complete.
+[2022-06-22 17:34:52,214214] INFO [47832] - Finished server process [17760]
+[2022-06-22 17:35:23,209209] INFO [45416] - Started server process [33996]
+[2022-06-22 17:35:23,209209] INFO [45416] - Waiting for application startup.
+[2022-06-22 17:35:23,209209] INFO [45416] - Application startup complete.
+[2022-06-22 17:35:23,210210] INFO [45416] - Uvicorn running on http://0.0.0.0:80 (Press CTRL+C to quit)
+[2022-06-22 17:35:28,131131] INFO [45416] - Shutting down
+[2022-06-22 17:35:28,242242] INFO [45416] - Waiting for application shutdown.
+[2022-06-22 17:35:28,242242] INFO [45416] - Application shutdown complete.
+[2022-06-22 17:35:28,242242] INFO [45416] - Finished server process [33996]
+[2022-06-22 17:37:54,011011] INFO [28832] - Started server process [32840]
+[2022-06-22 17:37:54,011011] INFO [28832] - Waiting for application startup.
+[2022-06-22 17:37:54,012012] INFO [28832] - Application startup complete.
+[2022-06-22 17:37:54,012012] INFO [28832] - Uvicorn running on http://0.0.0.0:80 (Press CTRL+C to quit)
+[2022-06-22 17:38:01,406406] INFO [28832] - 127.0.0.1:54364 - "GET /ws/socket.io/?transport=polling&EIO=4&t=1655941081.4019492 HTTP/1.1" 200
+[2022-06-22 17:38:01,413413] INFO [28832] - Connected sid: K-0MhOk_lz7gaFwjAAAB
+[2022-06-22 17:38:01,413413] INFO [28832] - 127.0.0.1:54365 - "POST /ws/socket.io/?transport=polling&EIO=4&sid=N_qPTC5hezzdKs04AAAA HTTP/1.1" 200
+[2022-06-22 17:38:01,413413] INFO [28832] - 127.0.0.1:54364 - "GET /ws/socket.io/?transport=polling&EIO=4&sid=N_qPTC5hezzdKs04AAAA&t=1655941081.40895 HTTP/1.1" 200
+[2022-06-22 17:38:01,417417] INFO [28832] - Disconnected sid: K-0MhOk_lz7gaFwjAAAB
+[2022-06-22 17:38:01,417417] INFO [28832] - 127.0.0.1:54365 - "POST /ws/socket.io/?transport=polling&EIO=4&sid=N_qPTC5hezzdKs04AAAA HTTP/1.1" 200
+[2022-06-22 17:38:04,401401] INFO [28832] - Shutting down
+[2022-06-22 17:38:04,509509] INFO [28832] - Waiting for connections to close. (CTRL+C to force quit)
+[2022-06-22 17:38:04,620620] INFO [28832] - Finished server process [32840]
+[2022-06-22 17:38:04,620620] INFO [28832] - 127.0.0.1:54364 - "GET /ws/socket.io/?transport=polling&EIO=4&sid=N_qPTC5hezzdKs04AAAA&t=1655941081.414949 HTTP/1.1" 400
+[2022-06-22 17:38:04,621621] INFO [28832] - ASGI 'lifespan' protocol appears unsupported.
+[2022-06-22 17:38:04,621621] ERROR [28832] - Exception in callback _SelectorSocketTransport._call_connection_lost(None)
+handle: <Handle _SelectorSocketTransport._call_connection_lost(None)>
+Traceback (most recent call last):
+  File "C:\Program Files\Python39\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Program Files\Python39\lib\asyncio\selector_events.py", line 978, in _call_connection_lost
+    super()._call_connection_lost(exc)
+  File "C:\Program Files\Python39\lib\asyncio\selector_events.py", line 736, in _call_connection_lost
+    self._protocol.connection_lost(exc)
+  File "C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\protocols\http\h11_impl.py", line 117, in connection_lost
+    self.on_connection_lost()
+  File "C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\_handlers\http.py", line 42, in <lambda>
+    on_connection_lost=lambda: connection_lost.set_result(True),
+asyncio.exceptions.InvalidStateError: invalid state
+[2022-06-22 17:38:04,622622] ERROR [28832] - Exception in callback handle_http.<locals>.retrieve_exception(<Task cancell...erver.py:104>>) at C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\_handlers\http.py:56
+handle: <Handle handle_http.<locals>.retrieve_exception(<Task cancell...erver.py:104>>) at C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\_handlers\http.py:56>
+Traceback (most recent call last):
+  File "C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\server.py", line 107, in handler
+    await handle_http(
+  File "C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\_handlers\http.py", line 87, in handle_http
+    await connection_lost
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Program Files\Python39\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\rando\AppData\Roaming\Python\Python39\site-packages\uvicorn\_handlers\http.py", line 58, in retrieve_exception
+    exc = task.exception()
+asyncio.exceptions.CancelledError

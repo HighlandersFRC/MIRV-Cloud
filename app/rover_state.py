@@ -3,13 +3,14 @@ ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop"]
 ROVER_STATUSES = ["available", "unavailable"]
 ROVER_LOCATION = [-104.969523, 40.474083]
 
+
 class Rover:
 
     def __init__(self, rid: str, sid: str):
-        self.roverID = rid
+        self.roverId = rid
         self.sid = sid
         self.rover_state = {
-            "roverID": self.roverID,
+            "roverId": self.roverId,
             "state": ROVER_STATES[0],
             "status": ROVER_STATUSES[0],
             "battery-percent": 100,
@@ -30,8 +31,10 @@ class Rover:
                 "speed": 0
             }
         }
-    
-    def update(self, data):
+
+    # data: {"battery-voltage": "12"}
+    # data: {"health/electronics": "degraded"}
+    def update_individual(self, data):
         if data:
             for data_key in data:
                 for rover_key in self.rover_state:
@@ -44,10 +47,17 @@ class Rover:
                     if data_key == tel_key:
                         self.rover_state["telemetry"][tel_key] = data[data_key]
 
+    def update(self, new_rover_state):
+        self.rover_state = new_rover_state
+        return self
+
     def getGeneral(self):
         return {
-            "roverID": self.rover_state["roverID"],
+            "roverId": self.rover_state["roverId"],
             "state": self.rover_state["state"],
             "status": self.rover_state["status"],
             "battery-voltage": self.rover_state["battery-voltage"]
         }
+
+    def getState(self):
+        return self.rover_state

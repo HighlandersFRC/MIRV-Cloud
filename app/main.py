@@ -1,16 +1,28 @@
 from hashlib import sha256
 from http.client import HTTPException
-import random
 import datetime
 from typing import Union, List
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_socketio import SocketManager
 from pydantic import BaseModel
-from roverstate import Rover
+from rover_state import Rover
 import os
+import json
+import logging
+import uvicorn
+from schemas import mirv_schemas
 
 ROVERS = []
+ISO_8601_FORMAT_STRING = "%Y-%m-%dT%H:%M:%SZ"
+
+# Set Logging Object and Functionality
+logging.basicConfig(
+    format='%(levelname)-8s [%(asctime)s|%(filename)s:%(lineno)d] %(message)s',
+    datefmt=ISO_8601_FORMAT_STRING,
+    level=logging.DEBUG,
+)
+l = logging.getLogger(__name__)
 
 app = FastAPI()
 sm = SocketManager(app=app)
@@ -27,44 +39,6 @@ app.add_middleware(
 
 
 PASS = os.getenv("PASSWORD")
-# HOST = os.getenv("HOST")
-# PORT = os.getenv("PORT")
-
-# HOST = "192.168.1.3"
-PORT = 80
-
-
-@sm.on('connect')
-def handle_connect(sid, environ, auth):
-    ROVERS.append(Rover(environ["HTTP_ROVERID"], sid))
-    if auth["password"] != PASS:
-        raise ConnectionRefusedError("Authentication failed")
-    print(f"Connected sid: {sid}")
-    print(f"{len(ROVERS)} Rover(s) connected")
-
-
-@sm.on('data')
-def handle_data(sid, data):
-    print(f"Received {data} from sid: {sid}")
-    for r in ROVERS:
-        if r.sid == sid:
-            r.update(data)
-            break
-
-
-@sm.on('disconnect')
-def handle_disconnect(sid):
-    for i in range(len(ROVERS)):
-        if ROVERS[i].sid == sid:
-            ROVERS.pop(i)
-            break
-    print(f"Disconnected sid: {sid}")
-
-
-HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
-ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop"]
-ROVER_STATUSES = ["available", "unavailable"]
-ROVER_LOCATION = [-104.969523, 40.474083]
 
 
 class ConnectionRequest(BaseModel):
@@ -79,43 +53,132 @@ class ConnectionResponseValid(BaseModel):
     candidate: str
 
 
-def get_scaled_random_number(start, end, scale=1, digits=None):
-    return round((random.random() * abs(end - start) + start)*scale, digits)
+##################################################################
+# Socket Connection
+##################################################################
+@sm.on('connect')
+async def handle_connect(sid, environ, auth):
+    l.debug(
+        f"Connection request for sid: {sid} with environ: {environ}, auth: {auth}, at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
+    if not environ.get("HTTP_ROVERID"):
+        l.info(f"Rejecting connection request. No roverId was specified. Please specify the roverId in the headers")
+        await sm.emit('exception', 'AUTH-no rover id')
+        return
+    if auth["password"] != PASS:
+        l.info(f"Rejecting connection request. Invalid password")
+        await sm.emit('exception', 'AUTH-invalid password')
+        return
+    roverId = environ["HTTP_ROVERID"]
+    if ([i for i in ROVERS if i.roverId == roverId]):
+        l.info(f"Rejecting connection request. Rover id already exists")
+        await sm.emit('exception', 'ERROR-roverId already exists')
+        return
+    ROVERS.append(Rover(roverId, sid))
+    l.info(f"Connected sid: {sid}")
+    l.debug(f"{len(ROVERS)} Rover(s) connected")
 
 
+@sm.on('data')
+async def handle_data(sid, new_state):
+    l.debug(
+        f"Received {new_state} from sid: {sid} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
+    # try:
+    #     new_state_obj = json.loads(new_state)
+    # except ValueError:
+    #     l.info(
+    #         f"Incorrect rover id for connection. Expected roverId: {r.roverId}")
+    #     await sm.emit('exception', 'ERROR-not json')
+    #     return
+    if mirv_schemas.validate_schema(new_state, mirv_schemas.ROVER_STATE_SCHEMA):
+        for r in ROVERS:
+            if r.sid == sid:
+                if new_state.get('roverId') == r.roverId:
+                    r = r.update(new_state)
+                    l.info(f"Successfully updated state of rover {r.roverId}")
+                    return
+                else:
+                    l.info(
+                        f"Incorrect rover id for connection. Expected roverId: {r.roverId}")
+                    await sm.emit('exception', 'ERROR-incorrect rover id')
+                    return
+        l.info(f"Rover not found for sid. Please reconnect")
+        await sm.emit('exception', 'RECONNECT-sid not found')
+    else:
+        l.info(f"Invalid data sent to websocket")
+        await sm.emit('exception', 'ERROR-invalid message')
+
+
+@sm.on('data_specific')
+async def handle_data(sid, new_state):
+    l.debug(
+        f"Received {new_state} from sid: {sid} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
+    try:
+        for r in ROVERS:
+            if r.sid == sid:
+                r.update_individual(new_state)
+                l.info(f"Successfully updated state of rover {r.roverId}")
+                return
+            else:
+                l.info(
+                    f"Incorrect rover id for connection. Expected roverId: {r.roverId}")
+                await sm.emit('exception', 'ERROR-incorrect rover id')
+                return
+        l.info(f"Rover not found for sid. Please reconnect")
+        await sm.emit('exception', 'RECONNECT-sid not found')
+    except:
+        l.info(f"Invalid data sent to websocket")
+        await sm.emit('exception', 'ERROR-invalid message')
+
+
+@sm.on('disconnect')
+async def handle_disconnect(sid):
+    l.debug(
+        f"Received disconnect request from sid: {sid} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
+    for i in range(len(ROVERS)):
+        if ROVERS[i].sid == sid:
+            ROVERS.pop(i)
+            l.info(f"Disconnected sid: {sid}")
+            return
+    l.info(
+        f"Unable to close connection for sid: {sid}, connection does not exist")
+    await sm.emit('exception', 'RECONNECT-sid not found')
+
+
+##################################################################
+# Rest Endpoint
+##################################################################
 @app.get("/")
 def read_root():
+    l.debug(
+        f"Received request to / at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
     return {"Hello": "World"}
 
 
 # GET: list of rovers and statuses
 @app.get("/rovers")
 async def read_item(q: Union[str, None] = None):
-    return [r.getGeneral() for r in ROVERS]
+    l.debug(
+        f"Received request to /rovers at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
+    return [r.getState() for r in ROVERS]
 
 
-@app.get("/rovers/{roverID}")
-async def read_item(roverID: str, q: Union[str, None] = None):
+@app.get("/rovers/{roverId}")
+async def read_item(roverId: str, q: Union[str, None] = None):
+    l.debug(
+        f"Received request to /rovers/{{roverId}} with roverId={roverId} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
     for r in ROVERS:
-        if r.roverID == roverID:
+        if r.roverId == roverId:
             return r.rover_state
     raise HTTPException(
-        status_code=404, detail=f'Rover "{roverID}" does not exist')
+        status_code=404, detail=f'Rover "{roverId}" does not exist')
 
 
 @app.post("/rovers/connect")
 async def connect_to_rover(connection_request: ConnectionRequest):
+    l.debug(
+        f"Received request to /rovers/connect with connection_id={connection_request.connection_id} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
     resp = ConnectionResponseValid()
     resp.connection_id = connection_request.connection_id
-    resp.answer = f'answer_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}'
-    resp.candidate = f'candidate_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}'
+    resp.answer = f'answer_{datetime.datetime.now().strftime(ISO_8601_FORMAT_STRING)}'
+    resp.candidate = f'candidate_{datetime.datetime.now().strftime(ISO_8601_FORMAT_STRING)}'
     return resp
-
-
-# PUT: Add/update rover status info?
-
-
-# POST: Send command?
-
-# if __name__ == "__main__":
-#     uvicorn.run(app, port=PORT)  # , host=HOST
