@@ -211,11 +211,6 @@ async def connect_to_rover(connection_request: ConnectionRequest):
             HTTPException(status_code=408, detail="Rover did not respond within allotted connection time.")
     else:
         raise HTTPException(status_code=404, detail="Rover not found")
-    
-    
-    #x = requests.post('http://localhost:8080/offer', json = {'offer': request_offer})
-    #print ("Response", x.json())
 
-    return x.json()
 
 
