@@ -7,11 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_socketio import SocketManager
 from pydantic import BaseModel
 from rover_state import Rover
+import asyncio
 import os
 import json
 import logging
 import uvicorn
 from schemas import mirv_schemas
+import requests
 
 ROVERS = []
 ISO_8601_FORMAT_STRING = "%Y-%m-%dT%H:%M:%SZ"
@@ -44,13 +46,20 @@ PASS = os.getenv("PASSWORD")
 class ConnectionRequest(BaseModel):
     connection_id: str
     rover_id: str
-    offer: str
+    offer: dict
 
 
 class ConnectionResponseValid(BaseModel):
     connection_id: str
     answer: str
     candidate: str
+
+
+def get_rover_by_id(rover_id):
+    for rover in ROVERS:
+        if rover.roverId == rover_id:
+            return rover
+    return None
 
 
 ##################################################################
@@ -175,10 +184,38 @@ async def read_item(roverId: str, q: Union[str, None] = None):
 
 @app.post("/rovers/connect")
 async def connect_to_rover(connection_request: ConnectionRequest):
+    print('Connection')
+
+
+    
     l.debug(
         f"Received request to /rovers/connect with connection_id={connection_request.connection_id} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
-    resp = ConnectionResponseValid()
-    resp.connection_id = connection_request.connection_id
-    resp.answer = f'answer_{datetime.datetime.now().strftime(ISO_8601_FORMAT_STRING)}'
-    resp.candidate = f'candidate_{datetime.datetime.now().strftime(ISO_8601_FORMAT_STRING)}'
-    return resp
+
+    request_rover_id = connection_request.rover_id
+    request_offer = connection_request.offer
+    
+    print(request_rover_id, request_offer)
+    
+    
+    #Find if rover is connected to api
+    rover = get_rover_by_id(request_rover_id)
+    
+    if rover is not None:
+        # Request rover to respond to the desired connection string.
+        response = await sm.call('connection_offer', data = {'offer': request_offer}, to = rover.sid, timeout = 20)
+        if response is not None:
+            l.debug(f"Received Response: {response} from Rover {request_rover_id} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
+
+            return response
+        else:
+            HTTPException(status_code=408, detail="Rover did not respond within allotted connection time.")
+    else:
+        raise HTTPException(status_code=404, detail="Rover not found")
+    
+    
+    #x = requests.post('http://localhost:8080/offer', json = {'offer': request_offer})
+    #print ("Response", x.json())
+
+    return x.json()
+
+
