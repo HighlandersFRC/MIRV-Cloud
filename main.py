@@ -19,7 +19,7 @@ app.add_middleware(
 )
 
 HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
-ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop"]
+ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop", "autonomous"]
 ROVER_STATUSES = ["available", "unavailable"]
 
 ROVER_LOCATION = [-104.969523, 40.474083]
