@@ -3,8 +3,8 @@ import random
 import json
 
 # HOST = "20.221.114.229"
-HOST = "127.0.0.1"
-PORT = 80
+HOST = "192.168.1.5"
+PORT = 8080
 
 sio = socketio.Client()
 
