@@ -58,8 +58,10 @@ send("data", {
         "general": "healthy"
     },
     "telemetry": {
-        "lat": 39,
-        "long": -105,
+        "location": {
+            "lat": 39,
+            "long": -105
+        },
         "heading": 90,
         "speed": 0
     }

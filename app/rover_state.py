@@ -25,8 +25,10 @@ class Rover:
                 "general": HEALTH_STATES[2]
             },
             "telemetry": {
-                "long": ROVER_LOCATION[0],
-                "lat": ROVER_LOCATION[1],
+                "location": {
+                    "long": ROVER_LOCATION[0],
+                    "lat": ROVER_LOCATION[1]
+                },
                 "heading": 90,
                 "speed": 0
             }

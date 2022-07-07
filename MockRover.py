@@ -10,9 +10,21 @@ from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
 import requests
 import numpy
 import math
+import random
+import time
+import schedule
+import threading
 
-CLOUD_HOST = "52.185.88.232"
+CLOUD_HOST = "52.185.111.58"
 CLOUD_PORT = 8080
+
+HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
+ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop"]
+ROVER_STATUSES = ["available", "unavailable"]
+ROVER_LOCATION = [-104.969523, 40.474083]
+
+ROVER_ID = "rover_7"
+SEND_INTERVAL_SECONDS = 30
 
 
 # Setup webtrc connection components
@@ -91,6 +103,10 @@ class FlagVideoStreamTrack(VideoStreamTrack):
 # Website posts an offer to python server
 
 
+def get_scaled_random_number(start, end, scale=1, digits=None):
+    return round((random.random() * abs(end - start) + start)*scale, digits)
+
+
 async def offer(request):
     params = await request.json()
     print("Received Params")
@@ -108,6 +124,59 @@ async def offer(request):
         @channel.on("message")
         def on_message(message):
             print("Received: ", message)
+            if message == "send_data":
+                sendRoverData()
+            elif message == "send_markers":
+                sendMarkerData()
+
+        data_channel = channel
+
+        def sendRoverData():
+            print("Sending data")
+            data_channel.send(json.dumps({
+                "roverId": ROVER_ID,
+                "state": ROVER_STATES[0],
+                "status": ROVER_STATUSES[0],
+                "battery": random.randint(0, 100),
+                "health": {
+                    "encoder": HEALTH_STATES[random.randint(0, 3)],
+                    "mechanical": HEALTH_STATES[random.randint(0, 3)],
+                    "lidar": HEALTH_STATES[random.randint(0, 3)],
+                    "camera": HEALTH_STATES[random.randint(0, 3)],
+                    "imu": HEALTH_STATES[random.randint(0, 3)],
+                    "gps": HEALTH_STATES[random.randint(0, 3)],
+                    "garage": HEALTH_STATES[random.randint(0, 3)],
+                },
+                "telemetry": {
+                    "location": {
+                        "long": ROVER_LOCATION[0] + get_scaled_random_number(-1, 1, scale=0.001, digits=6),
+                        "lat": ROVER_LOCATION[1] + get_scaled_random_number(-1, 1, scale=0.001, digits=6)
+                    },
+                    "heading": get_scaled_random_number(0, 360, digits=2),
+                    "speed": get_scaled_random_number(0, 20, digits=2),
+                }
+            }))
+
+        def sendMarkerData():
+            print("Sending data")
+            data_channel.send(json.dumps([
+                {
+                    'id': "pi_lit_1",
+                    "description": "Pi lit 1",
+                    'location': {
+                        "long": ROVER_LOCATION[0] + get_scaled_random_number(-1, 1, scale=0.001, digits=6),
+                        "lat": ROVER_LOCATION[1] + get_scaled_random_number(-1, 1, scale=0.001, digits=6)
+                    }
+                },
+                {
+                    'id': "pi_lit_2",
+                    "description": "Pi lit 2",
+                    'location': {
+                        "long": ROVER_LOCATION[0] + get_scaled_random_number(-1, 1, scale=0.001, digits=6),
+                        "lat": ROVER_LOCATION[1] + get_scaled_random_number(-1, 1, scale=0.001, digits=6)
+                    }
+                }
+            ]))
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
@@ -188,10 +257,10 @@ def on_shutdown():
 
 # Send sample Rover Status to Cloud
 print(f"http://{CLOUD_HOST}:{CLOUD_PORT}/ws")
-sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"roverId": "rover_6"},
+sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"roverId": "rover_7"},
             auth={"password": None}, socketio_path="/ws/socket.io")
 send("data", {
-    "roverId": "rover_6",
+    "roverId": ROVER_ID,
     "state": "docked",
     "status": "available",
     "battery-percent": 12,
@@ -206,8 +275,10 @@ send("data", {
         "general": "healthy"
     },
     "telemetry": {
-        "lat": 39,
-        "long": -105,
+        "location": {
+            "lat": 39,
+            "long": -105
+        },
         "heading": 90,
         "speed": 0
     }

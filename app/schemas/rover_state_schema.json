@@ -55,11 +55,20 @@
         "telemetry": {
             "type": "object",
             "properties": {
-                "long": {
-                    "type": "number"
-                },
-                "lat": {
-                    "type": "number"
+                "location": {
+                    "type": "object",
+                    "properties": {
+                        "lat": {
+                            "type": "integer"
+                        },
+                        "long": {
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "lat",
+                        "long"
+                    ]
                 },
                 "heading": {
                     "type": "number"
@@ -69,8 +78,6 @@
                 }
             },
             "required": [
-                "long",
-                "lat",
                 "heading",
                 "speed"
             ]
