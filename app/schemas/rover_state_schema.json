@@ -59,10 +59,16 @@
                     "type": "object",
                     "properties": {
                         "lat": {
-                            "type": "integer"
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
                         },
                         "long": {
-                            "type": "integer"
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
                         }
                     },
                     "required": [
@@ -71,10 +77,16 @@
                     ]
                 },
                 "heading": {
-                    "type": "number"
+                    "type": [
+                        "number",
+                        "null"
+                    ]
                 },
                 "speed": {
-                    "type": "number"
+                    "type": [
+                        "number",
+                        "null"
+                    ]
                 }
             },
             "required": [
@@ -98,7 +110,8 @@
                 "docked",
                 "remoteOperation",
                 "disabled",
-                "eStop"
+                "eStop",
+                "unknown"
             ]
         },
         "rover_status_enum": {
