@@ -3,8 +3,8 @@ import random
 import json
 
 # HOST = "20.221.114.229"
-HOST = "127.0.0.1"
-PORT = 80
+HOST = "192.168.1.5"
+PORT = 8080
 
 sio = socketio.Client()
 
@@ -58,8 +58,10 @@ send("data", {
         "general": "healthy"
     },
     "telemetry": {
-        "lat": 39,
-        "long": -105,
+        "location": {
+            "lat": 39,
+            "long": -105
+        },
         "heading": 90,
         "speed": 0
     }
