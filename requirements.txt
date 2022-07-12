@@ -5,3 +5,5 @@ pydantic>=1.8.0,<2.0.0
 fastapi-socketio==0.0.9
 jsonschema==4.6.0
 requests
+python-multipart
+keycloak-client

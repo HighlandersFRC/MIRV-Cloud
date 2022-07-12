@@ -15,7 +15,7 @@ import time
 import schedule
 import threading
 
-CLOUD_HOST = "52.185.111.58"
+CLOUD_HOST = "localhost"
 CLOUD_PORT = 8080
 
 HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
@@ -23,7 +23,7 @@ ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop"]
 ROVER_STATUSES = ["available", "unavailable"]
 ROVER_LOCATION = [-104.969523, 40.474083]
 
-ROVER_ID = "rover_7"
+ROVER_ID = "rover_42"
 SEND_INTERVAL_SECONDS = 30
 
 
