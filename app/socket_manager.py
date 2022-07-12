@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class MirvSocketManager():
-    def __init__(self, app, PASSWORD=None):
+    def __init__(self, app, keycloakClient):
         self.sm = SocketManager(app=app)
         self.ROVERS = []
 
@@ -28,9 +28,9 @@ class MirvSocketManager():
                     f"Rejecting connection request. No roverId was specified. Please specify the roverId in the headers")
                 await self.sm.emit('exception', 'AUTH-no rover id')
                 return
-            if auth["password"] != PASSWORD:
-                logger.info(f"Rejecting connection request. Invalid password")
-                await self.sm.emit('exception', 'AUTH-invalid password')
+            if not keycloakClient.validate_token(auth['token']):
+                logger.info(f"Rejecting connection request. Invalid token")
+                await self.sm.emit('exception', 'AUTH-invalid token')
                 return
             roverId = environ["HTTP_ROVERID"]
             for i in self.ROVERS:
