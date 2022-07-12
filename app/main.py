@@ -37,7 +37,7 @@ logger.add(sys.stdout, colorize=True,
            format="<green>{time:HH:mm:ss}</green> | {level} | <level>{message}</level>")
 
 app = FastAPI()
-sm = MirvSocketManager(app, PASS)
+mirvSocketManager = MirvSocketManager(app, PASS)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 origins = ["*"]
@@ -67,7 +67,7 @@ class TokenData(BaseModel):
 
 
 def get_rover_by_id(rover_id):
-    for rover in sm.ROVERS:
+    for rover in mirvSocketManager.ROVERS:
         if rover.roverId == rover_id:
             return rover
     return None
@@ -145,7 +145,7 @@ async def read_item(token_valid: bool = Depends(get_current_token)):
     logger.info("/rovers")
     logger.debug(
         f"Received request to /rovers at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
-    return [r.getState() for r in sm.ROVERS]
+    return [r.getState() for r in mirvSocketManager.ROVERS]
 
 
 @app.get("/rovers/{roverId}")
@@ -153,7 +153,7 @@ async def read_item(roverId: str, token_valid: bool = Depends(get_current_token)
     logger.info(f"/rovers/{roverId}")
     logger.debug(
         f"Received request to /rovers/{{roverId}} with roverId={roverId} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
-    for r in sm.ROVERS:
+    for r in mirvSocketManager.ROVERS:
         if r.roverId == roverId:
             return r.rover_state
     raise HTTPException(
@@ -178,7 +178,7 @@ async def connect_to_rover(connection_request: ConnectionRequest, token_valid: b
 
     if rover is not None:
         # Request rover to respond to the desired connection string.
-        response = await sm.call('connection_offer', data={'offer': request_offer}, to=rover.sid, timeout=20)
+        response = await mirvSocketManager.sm.call('connection_offer', data={'offer': request_offer}, to=rover.sid, timeout=20)
         if response is not None:
             logger.debug(
                 f"Received Response: {response} from Rover {request_rover_id} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")

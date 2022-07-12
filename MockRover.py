@@ -15,7 +15,7 @@ import time
 import schedule
 import threading
 
-CLOUD_HOST = "localhost"
+CLOUD_HOST = "52.185.79.181"
 CLOUD_PORT = 8080
 
 HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
