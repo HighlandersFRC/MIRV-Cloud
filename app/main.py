@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_socketio import SocketManager
 from pydantic import BaseModel
 from rover_state import Rover
+from garage_state import Garage
 import asyncio
 import os
 import json
@@ -16,6 +17,7 @@ from schemas import mirv_schemas
 import requests
 
 ROVERS = []
+GARAGES= []
 ISO_8601_FORMAT_STRING = "%Y-%m-%dT%H:%M:%SZ"
 
 # Set Logging Object and Functionality
@@ -49,6 +51,7 @@ class ConnectionRequest(BaseModel):
     offer: dict
 
 
+
 class ConnectionResponseValid(BaseModel):
     connection_id: str
     answer: str
@@ -66,25 +69,46 @@ def get_rover_by_id(rover_id):
 # Socket Connection
 ##################################################################
 @sm.on('connect')
-async def handle_connect(sid, environ, auth):
-    l.debug(
-        f"Connection request for sid: {sid} with environ: {environ}, auth: {auth}, at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
-    if not environ.get("HTTP_ROVERID"):
-        l.info(f"Rejecting connection request. No roverId was specified. Please specify the roverId in the headers")
+async def handle_connect(sid, environ):
+    #l.debug(
+    #    f"Connection request for sid: {sid} with environ: {environ}, auth: {auth}, at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
+    
+    #if auth["password"] != PASS:
+    #    l.info(f"Rejecting connection request. Invalid password")
+    #    await sm.emit('exception', 'AUTH-invalid password')
+    #    return
+    
+
+    keys = environ.keys()
+    temp = {}
+    for key in keys:
+        #print(environ[key])
+        temp[key.upper()] = environ[key]
+
+    environ = temp
+    if "HTTP_ROVERID" in environ:
+        roverId = environ["HTTP_ROVERID"]
+        if ([i for i in ROVERS if i.roverId == roverId]):
+            l.info(f"Rejecting connection request. Rover id already exists")
+            await sm.emit('exception', 'ERROR-roverId already exists')
+            return
+        ROVERS.append(Rover(roverId, sid))
+        l.info(f"Connected sid: {sid}")
+        l.debug(f"{len(ROVERS)} Rover(s) connected")
+
+    if "HTTP_GARAGEID" in environ:
+        garageId = environ["HTTP_GARAGEID"]
+        if ([i for i in GARAGES if i.garageId == garageId]):
+            l.info(f"Rejecting connection request. Garage id already exists")
+            await sm.emit('exception', 'ERROR-garageID already exists')
+            return
+        GARAGES.append(Garage(garageId, sid))
+
+    if (not "HTTP_GARAGEID" in environ) and (not "HTTP_ROVERID" in environ):
+        l.info(f"Rejecting connection request. No DeviceID was specified. Please specify the DeviceID in the headers")
         await sm.emit('exception', 'AUTH-no rover id')
         return
-    if auth["password"] != PASS:
-        l.info(f"Rejecting connection request. Invalid password")
-        await sm.emit('exception', 'AUTH-invalid password')
-        return
-    roverId = environ["HTTP_ROVERID"]
-    if ([i for i in ROVERS if i.roverId == roverId]):
-        l.info(f"Rejecting connection request. Rover id already exists")
-        await sm.emit('exception', 'ERROR-roverId already exists')
-        return
-    ROVERS.append(Rover(roverId, sid))
-    l.info(f"Connected sid: {sid}")
-    l.debug(f"{len(ROVERS)} Rover(s) connected")
+
 
 
 @sm.on('data')
@@ -170,6 +194,12 @@ async def read_item(q: Union[str, None] = None):
         f"Received request to /rovers at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
     return [r.getState() for r in ROVERS]
 
+@app.get("/garages")
+async def read_item(q: Union[str, None] = None):
+    l.debug(
+        f"Received request to /rovers at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
+    return [g.getState() for g in GARAGES]
+
 
 @app.get("/rovers/{roverId}")
 async def read_item(roverId: str, q: Union[str, None] = None):
@@ -217,5 +247,18 @@ async def connect_to_rover(connection_request: ConnectionRequest):
     #print ("Response", x.json())
 
     return x.json()
+
+
+@app.post("/ping/garage")
+async def connect_to_rover():
+    print("Sending Ping")
+    for garage in GARAGES:
+        response = await sm.call('connection_offer', data = {'offer': "test"}, to = garage.sid, timeout = 20)
+    
+    
+    #x = requests.post('http://localhost:8080/offer', json = {'offer': request_offer})
+    #print ("Response", x.json())
+
+    return 200
 
 
