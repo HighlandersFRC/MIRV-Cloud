@@ -258,7 +258,7 @@ def on_shutdown():
 # Send sample Rover Status to Cloud
 print(f"http://{CLOUD_HOST}:{CLOUD_PORT}/ws")
 sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"roverId": ROVER_ID},
-            auth={"password": None}, socketio_path="/ws/socket.io")
+            auth={"password": "PASSWORD"}, socketio_path="/ws/socket.io")
 send("data", {
     "roverId": ROVER_ID,
     "state": "docked",

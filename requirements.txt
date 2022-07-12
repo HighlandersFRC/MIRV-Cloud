@@ -7,3 +7,4 @@ jsonschema==4.6.0
 requests
 python-multipart
 keycloak-client
+loguru
