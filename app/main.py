@@ -60,7 +60,7 @@ class ConnectionResponseValid(BaseModel):
 
 def get_rover_by_id(rover_id):
     for rover in ROVERS:
-        if rover.roverId == rover_id:
+        if rover.rover_id == rover_id:
             return rover
     return None
 
@@ -87,22 +87,22 @@ async def handle_connect(sid, environ):
 
     environ = temp
     if "HTTP_ROVERID" in environ:
-        roverId = environ["HTTP_ROVERID"]
-        if ([i for i in ROVERS if i.roverId == roverId]):
+        rover_id = environ["HTTP_ROVERID"]
+        if ([i for i in ROVERS if i.rover_id == rover_id]):
             l.info(f"Rejecting connection request. Rover id already exists")
-            await sm.emit('exception', 'ERROR-roverId already exists')
+            await sm.emit('exception', 'ERROR-rover_id already exists')
             return
-        ROVERS.append(Rover(roverId, sid))
+        ROVERS.append(Rover(rover_id, sid))
         l.info(f"Connected sid: {sid}")
         l.debug(f"{len(ROVERS)} Rover(s) connected")
 
     if "HTTP_GARAGEID" in environ:
-        garageId = environ["HTTP_GARAGEID"]
-        if ([i for i in GARAGES if i.garageId == garageId]):
+        garage_id = environ["HTTP_GARAGEID"]
+        if ([i for i in GARAGES if i.garage_id == garage_id]):
             l.info(f"Rejecting connection request. Garage id already exists")
             await sm.emit('exception', 'ERROR-garageID already exists')
             return
-        GARAGES.append(Garage(garageId, sid))
+        GARAGES.append(Garage(garage_id, sid))
 
     if (not "HTTP_GARAGEID" in environ) and (not "HTTP_ROVERID" in environ):
         l.info(f"Rejecting connection request. No DeviceID was specified. Please specify the DeviceID in the headers")
@@ -119,19 +119,19 @@ async def handle_data(sid, new_state):
     #     new_state_obj = json.loads(new_state)
     # except ValueError:
     #     l.info(
-    #         f"Incorrect rover id for connection. Expected roverId: {r.roverId}")
+    #         f"Incorrect rover id for connection. Expected rover_id: {r.rover_id}")
     #     await sm.emit('exception', 'ERROR-not json')
     #     return
     if mirv_schemas.validate_schema(new_state, mirv_schemas.ROVER_STATE_SCHEMA):
         for r in ROVERS:
             if r.sid == sid:
-                if new_state.get('roverId') == r.roverId:
+                if new_state.get('rover_id') == r.rover_id:
                     r = r.update(new_state)
-                    l.info(f"Successfully updated state of rover {r.roverId}")
+                    l.info(f"Successfully updated state of rover {r.rover_id}")
                     return
                 else:
                     l.info(
-                        f"Incorrect rover id for connection. Expected roverId: {r.roverId}")
+                        f"Incorrect rover id for connection. Expected rover_id: {r.rover_id}")
                     await sm.emit('exception', 'ERROR-incorrect rover id')
                     return
         l.info(f"Rover not found for sid. Please reconnect")
@@ -149,11 +149,11 @@ async def handle_data(sid, new_state):
         for r in ROVERS:
             if r.sid == sid:
                 r.update_individual(new_state)
-                l.info(f"Successfully updated state of rover {r.roverId}")
+                l.info(f"Successfully updated state of rover {r.rover_id}")
                 return
             else:
                 l.info(
-                    f"Incorrect rover id for connection. Expected roverId: {r.roverId}")
+                    f"Incorrect rover id for connection. Expected rover_id: {r.rover_id}")
                 await sm.emit('exception', 'ERROR-incorrect rover id')
                 return
         l.info(f"Rover not found for sid. Please reconnect")
@@ -201,15 +201,15 @@ async def read_item(q: Union[str, None] = None):
     return [g.getState() for g in GARAGES]
 
 
-@app.get("/rovers/{roverId}")
-async def read_item(roverId: str, q: Union[str, None] = None):
+@app.get("/rovers/{rover_id}")
+async def read_item(rover_id: str, q: Union[str, None] = None):
     l.debug(
-        f"Received request to /rovers/{{roverId}} with roverId={roverId} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
+        f"Received request to /rovers/{{rover_id}} with rover_id={rover_id} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
     for r in ROVERS:
-        if r.roverId == roverId:
+        if r.rover_id == rover_id:
             return r.rover_state
     raise HTTPException(
-        status_code=404, detail=f'Rover "{roverId}" does not exist')
+        status_code=404, detail=f'Rover "{rover_id}" does not exist')
 
 
 @app.post("/rovers/connect")

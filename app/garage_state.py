@@ -5,10 +5,10 @@ GARAGE_STATUSES = ["available", "unavailable"]
 
 class Garage:
     def __init__(self, gid: str, sid: str):
-        self.GARAGEId = gid
+        self.garage_id = gid
         self.sid = sid
-        self.GARAGE_state = {
-            "GARAGEId": self.GARAGEId,
+        self.garage_state = {
+            "garageId": self.garage_id,
             "state": GARAGE_STATES[0],
             "status": GARAGE_STATUSES[0],
             "health": {
@@ -38,7 +38,7 @@ class Garage:
 
     def getGeneral(self):
         return {
-            "GARAGEId": self.GARAGE_state["GARAGEId"],
+            "garageId": self.GARAGE_state["garage_id"],
             "state": self.GARAGE_state["state"],
             "status": self.GARAGE_state["status"],
         }

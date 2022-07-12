@@ -7,10 +7,10 @@ ROVER_LOCATION = [-104.969523, 40.474083]
 class Rover:
 
     def __init__(self, rid: str, sid: str):
-        self.roverId = rid
+        self.rover_id = rid
         self.sid = sid
         self.rover_state = {
-            "roverId": self.roverId,
+            "roverId": self.rover_id,
             "state": ROVER_STATES[0],
             "status": ROVER_STATUSES[0],
             "battery-percent": 100,
@@ -55,7 +55,7 @@ class Rover:
 
     def getGeneral(self):
         return {
-            "roverId": self.rover_state["roverId"],
+            "roverId": self.rover_state["rover_id"],
             "state": self.rover_state["state"],
             "status": self.rover_state["status"],
             "battery-voltage": self.rover_state["battery-voltage"]
