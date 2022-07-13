@@ -26,6 +26,9 @@ ROVER_LOCATION = [-104.969523, 40.474083]
 ROVER_ID = "rover_42"
 SEND_INTERVAL_SECONDS = 30
 
+USERNAME = "rover_dev"
+PASSWORD = "rover_dev"
+
 
 # Setup webtrc connection components
 logger = logging.getLogger("pc")
@@ -255,10 +258,11 @@ def on_shutdown():
     sio.disconnect()
 
 
+
 # Send sample Rover Status to Cloud
 print(f"http://{CLOUD_HOST}:{CLOUD_PORT}/ws")
 sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"roverId": ROVER_ID},
-            auth={"password": "PASSWORD"}, socketio_path="/ws/socket.io")
+            auth={"token": "PASSWORD"}, socketio_path="/ws/socket.io")
 send("data", {
     "roverId": ROVER_ID,
     "state": "docked",

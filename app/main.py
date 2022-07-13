@@ -12,6 +12,8 @@ import logging
 from keycloak import KeycloakOpenID
 
 from socket_manager import MirvSocketManager
+from auth import MirvKeycloakProvider
+
 
 ISO_8601_FORMAT_STRING = "%Y-%m-%dT%H:%M:%SZ"
 
@@ -21,23 +23,13 @@ KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM")
 KEYCLOAK_CLIENT = os.getenv("KEYCLOAK_CLIENT")
 KEYCLOAK_SECRET_KEY = os.getenv("KEYCLOAK_SECRET_KEY")
 
-keycloak_openid = KeycloakOpenID(server_url=f"{KEYCLOAK_ENDPOINT}/auth/",
-                                 client_id=KEYCLOAK_CLIENT,
-                                 realm_name=KEYCLOAK_REALM,
-                                 client_secret_key=KEYCLOAK_SECRET_KEY)
-
-# Set Logging Object and Functionality
-# logging.basicConfig(
-#     format='%(levelname)-8s [%(asctime)s|%(filename)s:%(lineno)d] %(message)s',
-#     datefmt=ISO_8601_FORMAT_STRING,
-#     level=logging.DEBUG,
-# )
-# logger = logging.getLogger(__name__)
 logger.add(sys.stdout, colorize=True,
            format="<green>{time:HH:mm:ss}</green> | {level} | <level>{message}</level>")
 
 app = FastAPI()
-mirvSocketManager = MirvSocketManager(app, PASS)
+keycloakClient = MirvKeycloakProvider(
+    KEYCLOAK_ENDPOINT, KEYCLOAK_REALM, KEYCLOAK_CLIENT, KEYCLOAK_SECRET_KEY)
+socketManager = MirvSocketManager(app, keycloakClient)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 origins = ["*"]
@@ -67,43 +59,19 @@ class TokenData(BaseModel):
 
 
 def get_rover_by_id(rover_id):
-    for rover in mirvSocketManager.ROVERS:
+    for rover in socketManager.ROVERS:
         if rover.roverId == rover_id:
             return rover
     return None
 
 
-def get_access_token(username: str, password: str):
-    try:
-        return keycloak_openid.token(username, password)
-    except:
-        return None
-
-
-def get_user_info(token):
-    try:
-        return keycloak_openid.userinfo(token)
-    except:
-        return False
-
-
-def validate_token(token):
-    if not get_user_info(token):
-        return False
-    return True
-
-
-def get_current_token(access_token: str = Depends(oauth2_scheme)):
-    validate_token = get_user_info(access_token)
-    logger.info(access_token)
-    logger.info(validate_token)
-    if validate_token:
+def verify_access_token(access_token: str = Depends(oauth2_scheme)):
+    if keycloakClient.validate_token(access_token):
         return True
     else:
-        logger.error(f"Invalid Access Token")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=validate_token,
+            detail="Invalid token",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -121,17 +89,16 @@ def read_root():
 
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    print("Login Request Received")
-    access_token = get_access_token(form_data.username, form_data.password)
+    access_token = keycloakClient.get_access_token(
+        form_data.username, form_data.password)
     logger.info("/token")
-    logger.info(access_token)
     if not access_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    elif not get_user_info(access_token['access_token']):
+    elif not keycloakClient.get_user_info(access_token['access_token']):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid token",
@@ -142,24 +109,24 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 # GET: list of rovers and statuses
 @app.get("/rovers")
-async def read_item(token_valid: bool = Depends(get_current_token)):
+async def read_item(token_valid: bool = Depends(verify_access_token)):
     logger.info("/rovers")
     logger.debug(
         f"Received request to /rovers at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
-    return [r.getState() for r in mirvSocketManager.ROVERS]
+    return [r.getState() for r in socketManager.rovers]
 
 @app.get("/garages")
 async def read_item(q: Union[str, None] = None):
-    l.debug(
-        f"Received request to /rovers at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
-    return [g.getState() for g in GARAGES]
+    logger.debug(
+        f"Received request to /garages at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
+    return [g.getState() for g in socketManager.garages]
 
 @app.get("/rovers/{roverId}")
-async def read_item(roverId: str, token_valid: bool = Depends(get_current_token)):
+async def read_item(roverId: str, token_valid: bool = Depends(verify_access_token)):
     logger.info(f"/rovers/{roverId}")
     logger.debug(
         f"Received request to /rovers/{{roverId}} with roverId={roverId} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
-    for r in mirvSocketManager.ROVERS:
+    for r in socketManager.ROVERS:
         if r.roverId == roverId:
             return r.rover_state
     raise HTTPException(
@@ -167,7 +134,7 @@ async def read_item(roverId: str, token_valid: bool = Depends(get_current_token)
 
 
 @app.post("/rovers/connect")
-async def connect_to_rover(connection_request: ConnectionRequest, token_valid: bool = Depends(get_current_token)):
+async def connect_to_rover(connection_request: ConnectionRequest, token_valid: bool = Depends(verify_access_token)):
     logger.info("/rovers/connect")
     print('Connection')
 
@@ -184,7 +151,7 @@ async def connect_to_rover(connection_request: ConnectionRequest, token_valid: b
 
     if rover is not None:
         # Request rover to respond to the desired connection string.
-        response = await mirvSocketManager.sm.call('connection_offer', data={'offer': request_offer}, to=rover.sid, timeout=20)
+        response = await socketManager.sm.call('connection_offer', data={'offer': request_offer}, to=rover.sid, timeout=20)
         if response is not None:
             logger.debug(
                 f"Received Response: {response} from Rover {request_rover_id} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")

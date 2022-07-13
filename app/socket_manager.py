@@ -5,7 +5,7 @@ from fastapi import Depends
 from schemas import mirv_schemas
 from rover_state import Rover
 from garage_state import Garage
-from main import get_current_token
+#from main import verify_access_token
 ISO_8601_FORMAT_STRING = "%Y-%m-%dT%H:%M:%SZ"
 
 logging.basicConfig(
@@ -17,13 +17,16 @@ logger = logging.getLogger(__name__)
 
 
 class MirvSocketManager():
-    def __init__(self, app, PASSWORD=None):
+    def __init__(self, app, keycloakClient):
         self.sm = SocketManager(app=app)
         self.rovers = []
         self.garages = []
+        self.keycloakClient = keycloakClient
 
         @self.sm.on('connect')
-        async def handle_connect(sid, environ, token_valid: bool = Depends(get_current_token)):
+        async def handle_connect(sid, environ):#, token_valid: bool = Depends(keycloakClient.validate_token)
+            print("Received COnnection Request")
+
             keys = environ.keys()
             temp = {}
             for key in keys:
@@ -34,46 +37,50 @@ class MirvSocketManager():
             if "HTTP_ROVERID" in environ:
                 rover_id = environ["HTTP_ROVERID"]
                 if ([i for i in self.rovers if i.rover_id == rover_id]):
-                    l.info(f"Rejecting connection request. Rover id already exists")
+                    logger.info(f"Rejecting connection request. Rover id already exists")
                     await sm.emit('exception', 'ERROR-rover_id already exists')
                     return
                 self.rovers.append(Rover(rover_id, sid))
-                l.info(f"Connected sid: {sid}")
-                l.debug(f"{len(self.rovers)} Rover(s) connected")
+                logger.info(f"Connected sid: {sid}")
+                logger.debug(f"{len(self.rovers)} Rover(s) connected")
 
             if "HTTP_GARAGEID" in environ:
                 garage_id = environ["HTTP_GARAGEID"]
                 if ([i for i in self.garages if i.garage_id == garage_id]):
-                    l.info(f"Rejecting connection request. Garage id already exists")
+                    logger.info(f"Rejecting connection request. Garage id already exists")
                     await sm.emit('exception', 'ERROR-garageID already exists')
                     return
+
+                
                 self.garages.append(Garage(garage_id, sid))
+                logger.info(f"Connected sid: {sid}")
+                logger.debug(f"{len(self.garages)} Garages(s) connected")
 
             if (not "HTTP_GARAGEID" in environ) and (not "HTTP_ROVERID" in environ):
-                l.info(f"Rejecting connection request. No DeviceID was specified. Please specify the DeviceID in the headers")
+                logger.info(f"Rejecting connection request. No DeviceID was specified. Please specify the DeviceID in the headers")
                 await sm.emit('exception', 'AUTH-no rover id')
                 return 400
 
         @self.sm.on('data')
         async def handle_data(sid, new_state):
-            l.debug(
+            logger.debug(
                 f"Received {new_state} from sid: {sid} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
             if mirv_schemas.validate_schema(new_state, mirv_schemas.ROVER_STATE_SCHEMA):
                 for r in self.rovers:
                     if r.sid == sid:
                         if new_state.get('rover_id') == r.rover_id:
                             r = r.update(new_state)
-                            l.info(f"Successfully updated state of rover {r.rover_id}")
+                            logger.info(f"Successfully updated state of rover {r.rover_id}")
                             return
                         else:
-                            l.info(
+                            logger.info(
                                 f"Incorrect rover id for connection. Expected rover_id: {r.rover_id}")
                             await sm.emit('exception', 'ERROR-incorrect rover id')
                             return
-                l.info(f"Rover not found for sid. Please reconnect")
+                logger.info(f"Rover not found for sid. Please reconnect")
                 await sm.emit('exception', 'RECONNECT-sid not found')
             else:
-                l.info(f"Invalid data sent to websocket")
+                logger.info(f"Invalid data sent to websocket")
                 await sm.emit('exception', 'ERROR-invalid message')
 
         @self.sm.on('data_specific')
