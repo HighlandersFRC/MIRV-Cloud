@@ -48,6 +48,11 @@ class ConnectionRequest(BaseModel):
     rover_id: str
     offer: dict
 
+class GarageCommand(BaseModel):
+    connection_id: str
+    garage_id: str
+    cmd: dict
+
 
 class Token(BaseModel):
     access_token: str
@@ -59,9 +64,15 @@ class TokenData(BaseModel):
 
 
 def get_rover_by_id(rover_id):
-    for rover in socketManager.ROVERS:
-        if rover.roverId == rover_id:
+    for rover in socketManager.rovers:
+        if rover.rover_id == rover_id:
             return rover
+    return None
+
+def get_garage_by_id(garage_id):
+    for garage in socketManager.garages:
+        if garage.garage_id == garage_id:
+            return garage
     return None
 
 
@@ -169,17 +180,27 @@ async def connect_to_rover(connection_request: ConnectionRequest, token_valid: b
 
     return x.json()
 
-'''
-@app.post("/ping/garage")
-async def connect_to_rover():
-    print("Sending Ping")
-    for garage in GARAGES:
-        response = await sm.call('connection_offer', data = {'offer': "test"}, to = garage.sid, timeout = 20)
-    
-    
-    #x = requests.post('http://localhost:8080/offer', json = {'offer': request_offer})
-    #print ("Response", x.json())
 
+@app.post("/garages/cmd")
+async def send_garage_command(garage_cmd: GarageCommand, token_valid: bool = Depends(verify_access_token)):
+    
+    logger.debug(
+        f"Received request to /rovers/connect with connection_id={garage_cmd.connection_id} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
+
+    request_garage_id = garage_cmd.garage_id
+    request_cmd = garage_cmd.cmd
+
+    garage = get_garage_by_id(request_garage_id)
+    if garage is not None:
+        response = await socketManager.sm.call('connection_offer', data={'cmd': request_cmd}, to=garage.sid, timeout=20)
+        if response is not None:
+            logger.debug(
+                f"Received Response: {response} from Garage {request_garage_id} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
+
+            return response
+        else:
+            HTTPException(
+                status_code=408, detail="Garage did not respond within allotted connection time.")
     return 200
-'''
+
 

@@ -27,21 +27,21 @@ class Garage:
             for data_key in data:
                 for GARAGE_key in self.GARAGE_state:
                     if data_key == GARAGE_key and not isinstance(self.GARAGE_state[GARAGE_key], dict):
-                        self.GARAGE_state[GARAGE_key] = data[GARAGE_key]
+                        self.garage_state[GARAGE_key] = data[GARAGE_key]
                 for health_key in self.GARAGE_state["health"]:
                     if data_key == health_key:
-                        self.GARAGE_state["health"][health_key] = data[data_key]
+                        self.garage_state["health"][health_key] = data[data_key]
                         
     def update(self, new_GARAGE_state):
-        self.GARAGE_state = new_GARAGE_state
+        self.garage_state = new_GARAGE_state
         return self
 
     def getGeneral(self):
         return {
-            "garageId": self.GARAGE_state["garage_id"],
-            "state": self.GARAGE_state["state"],
-            "status": self.GARAGE_state["status"],
+            "garageId": self.garage_state["garage_id"],
+            "state": self.garage_state["state"],
+            "status": self.garage_state["status"],
         }
 
     def getState(self):
-        return self.GARAGE_state
+        return self.garage_state

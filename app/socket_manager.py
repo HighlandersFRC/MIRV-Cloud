@@ -1,11 +1,9 @@
 from fastapi_socketio import SocketManager
 import logging
 import datetime
-from fastapi import Depends
 from schemas import mirv_schemas
 from rover_state import Rover
 from garage_state import Garage
-#from main import verify_access_token
 ISO_8601_FORMAT_STRING = "%Y-%m-%dT%H:%M:%SZ"
 
 logging.basicConfig(
@@ -24,8 +22,20 @@ class MirvSocketManager():
         self.keycloakClient = keycloakClient
 
         @self.sm.on('connect')
-        async def handle_connect(sid, environ):#, token_valid: bool = Depends(keycloakClient.validate_token)
-            print("Received COnnection Request")
+        async def handle_connect(sid, environ):
+            print("Connection Received")
+            print(environ)
+            if "HTTP_AUTHORIZATION" not in environ:
+                logger.info(f"Rejected Connection from: {sid}. No Authorization Header present")
+                await self.sm.emit('exception', 'No Authorization Header present')
+                return 
+            else:
+                token = environ['HTTP_AUTHORIZATION'][6:]
+                if not self.keycloakClient.validate_token(token):
+                    logger.info(f"Rejected Connection from: {sid}. Invalid Token")
+                    await self.sm.emit('exception', 'Invalid Token')
+                    return
+                
 
             keys = environ.keys()
             temp = {}
@@ -38,7 +48,7 @@ class MirvSocketManager():
                 rover_id = environ["HTTP_ROVERID"]
                 if ([i for i in self.rovers if i.rover_id == rover_id]):
                     logger.info(f"Rejecting connection request. Rover id already exists")
-                    await sm.emit('exception', 'ERROR-rover_id already exists')
+                    await self.sm.emit('exception', 'ERROR-rover_id already exists')
                     return
                 self.rovers.append(Rover(rover_id, sid))
                 logger.info(f"Connected sid: {sid}")
@@ -48,7 +58,7 @@ class MirvSocketManager():
                 garage_id = environ["HTTP_GARAGEID"]
                 if ([i for i in self.garages if i.garage_id == garage_id]):
                     logger.info(f"Rejecting connection request. Garage id already exists")
-                    await sm.emit('exception', 'ERROR-garageID already exists')
+                    await self.sm.emit('exception', 'ERROR-garageID already exists')
                     return
 
                 
@@ -58,7 +68,7 @@ class MirvSocketManager():
 
             if (not "HTTP_GARAGEID" in environ) and (not "HTTP_ROVERID" in environ):
                 logger.info(f"Rejecting connection request. No DeviceID was specified. Please specify the DeviceID in the headers")
-                await sm.emit('exception', 'AUTH-no rover id')
+                await self.sm.emit('exception', 'AUTH-no rover id')
                 return 400
 
         @self.sm.on('data')
@@ -78,10 +88,10 @@ class MirvSocketManager():
                             await sm.emit('exception', 'ERROR-incorrect rover id')
                             return
                 logger.info(f"Rover not found for sid. Please reconnect")
-                await sm.emit('exception', 'RECONNECT-sid not found')
+                await self.sm.emit('exception', 'RECONNECT-sid not found')
             else:
                 logger.info(f"Invalid data sent to websocket")
-                await sm.emit('exception', 'ERROR-invalid message')
+                await self.sm.emit('exception', 'ERROR-invalid message')
 
         @self.sm.on('data_specific')
         async def handle_data(sid, new_state):
