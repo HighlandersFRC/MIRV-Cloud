@@ -10,9 +10,9 @@ https://docs.docker.com/cloud/aci-integration/
 ```
 docker login
 docker context create aci mirvacicontext
-docker build -t jacob6838/webrtc .
-docker push jacob6838/webrtc
-docker --context mirvacicontext run -p 8080:8080 jacob6838/webrtc
+docker build -t jacob6838/mirvapi .
+docker push jacob6838/mirvapi
+docker --context mirvacicontext run -p 8080:8080 jacob6838/mirvapi
 ```
 
 ## Auth
