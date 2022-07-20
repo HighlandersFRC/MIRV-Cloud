@@ -1,5 +1,6 @@
 HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
-ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop"]
+ROVER_STATES = ["disconnected", "disconnected_fault", "e_stop", "connected_disabled",
+                "connected_idle_roaming", "connected_idle_docked", "connected_fault", "autonomous", "remote_operation"]
 ROVER_STATUSES = ["available", "unavailable"]
 ROVER_LOCATION = [-104.969523, 40.474083]
 
@@ -10,11 +11,11 @@ class Rover:
         self.rover_id = rid
         self.sid = sid
         self.rover_state = {
-            "roverId": self.rover_id,
+            "rover_id": self.rover_id,
             "state": ROVER_STATES[0],
             "status": ROVER_STATUSES[0],
-            "battery-percent": 100,
-            "battery-voltage": 14,
+            "battery_percent": 100,
+            "battery_voltage": 14,
             "health": {
                 "electronics": HEALTH_STATES[2],
                 "drivetrain": HEALTH_STATES[2],
@@ -55,10 +56,10 @@ class Rover:
 
     def getGeneral(self):
         return {
-            "roverId": self.rover_state["rover_id"],
+            "rover_id": self.rover_state["rover_id"],
             "state": self.rover_state["state"],
             "status": self.rover_state["status"],
-            "battery-voltage": self.rover_state["battery-voltage"]
+            "battery_voltage": self.rover_state["battery_voltage"]
         }
 
     def getState(self):

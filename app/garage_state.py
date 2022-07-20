@@ -8,7 +8,7 @@ class Garage:
         self.garage_id = gid
         self.sid = sid
         self.garage_state = {
-            "garageId": self.garage_id,
+            "garage_id": self.garage_id,
             "state": GARAGE_STATES[0],
             "status": GARAGE_STATUSES[0],
             "health": {
@@ -38,7 +38,7 @@ class Garage:
 
     def getGeneral(self):
         return {
-            "garageId": self.garage_state["garage_id"],
+            "garage_id": self.garage_state["garage_id"],
             "state": self.garage_state["state"],
             "status": self.garage_state["status"],
         }

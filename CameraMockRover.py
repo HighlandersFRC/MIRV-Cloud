@@ -15,6 +15,7 @@ import random
 import time
 import schedule
 import threading
+import cv2
 
 # 52.185.79.181
 # 52.185.111.58 7/10
@@ -28,11 +29,13 @@ ROVER_STATES = ["disconnected", "disconnected_fault", "e_stop", "connected_disab
 ROVER_STATUSES = ["available", "unavailable"]
 ROVER_LOCATION = [-104.969523, 40.474083]
 
-ROVER_ID = "rover_44"
+ROVER_ID = "rover_58"
 SEND_INTERVAL_SECONDS = 30
 
 USERNAME = "rover_dev"
 PASSWORD = "1234"
+
+cap = cv2.VideoCapture(0)
 
 
 # Setup webtrc connection components
@@ -47,60 +50,21 @@ sio = socketio.Client()
 
 
 # Class Describing how to send VideoStreams to the Cloud
-class FlagVideoStreamTrack(VideoStreamTrack):
+class CameraVideoStreamTrack(VideoStreamTrack):
     """
     A video track that returns an animated flag.
     """
 
     def __init__(self):
         super().__init__()  # don't forget this!
-        self.counter = 0
-        height, width = 480, 640
-
-        # generate flag
-        data_bgr = numpy.hstack(
-            [
-                self._create_rectangle(
-                    width=213, height=480, color=(255, 0, 0)
-                ),  # blue
-                self._create_rectangle(
-                    width=214, height=480, color=(255, 255, 255)
-                ),  # white
-                self._create_rectangle(
-                    width=213, height=480, color=(0, 0, 255)),  # red
-            ]
-        )
-
-        # shrink and center it
-        M = numpy.float32([[0.5, 0, width / 4], [0, 0.5, height / 4]])
-        data_bgr = cv2.warpAffine(data_bgr, M, (width, height))
-
-        # compute animation
-        omega = 2 * math.pi / height
-        id_x = numpy.tile(numpy.array(
-            range(width), dtype=numpy.float32), (height, 1))
-        id_y = numpy.tile(
-            numpy.array(range(height), dtype=numpy.float32), (width, 1)
-        ).transpose()
-
-        self.frames = []
-        for k in range(30):
-            phase = 2 * k * math.pi / 30
-            map_x = id_x + 10 * numpy.cos(omega * id_x + phase)
-            map_y = id_y + 10 * numpy.sin(omega * id_x + phase)
-            self.frames.append(
-                VideoFrame.from_ndarray(
-                    cv2.remap(data_bgr, map_x, map_y, cv2.INTER_LINEAR), format="bgr24"
-                )
-            )
 
     async def recv(self):
         pts, time_base = await self.next_timestamp()
-
-        frame = self.frames[self.counter % 30]
+        ret, cv_frame = cap.read()
+        corrected = cv2.cvtColor(cv_frame, cv2.COLOR_RGB2BGR)
+        frame = VideoFrame.from_ndarray(corrected)
         frame.pts = pts
         frame.time_base = time_base
-        self.counter += 1
         return frame
 
     def _create_rectangle(self, width, height, color):
@@ -123,7 +87,7 @@ async def offer(request):
         sdp=params["offer"]["sdp"], type=params["offer"]["type"])
 
     pc = RTCPeerConnection()
-    pc.addTrack(FlagVideoStreamTrack())
+    pc.addTrack(CameraVideoStreamTrack())
     pc_id = "PeerConnection(%s)" % uuid.uuid4()
     pcs.add(pc)
 
@@ -255,7 +219,7 @@ def send(type: str, msg):
     sio.emit(type, msg)
 
 
-def on_shutdown():
+def on_shutdown(app):
     # close peer connections
     coros = [pc.close() for pc in pcs]
     asyncio.gather(*coros)

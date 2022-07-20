@@ -31,6 +31,7 @@ class MirvSocketManager():
                 return 
             else:
                 token = environ['HTTP_AUTHORIZATION'][6:]
+                print("\n\n\n", token)
                 if not self.keycloakClient.validate_token(token):
                     logger.info(f"Rejected Connection from: {sid}. Invalid Token")
                     await self.sm.emit('exception', 'Invalid Token')
