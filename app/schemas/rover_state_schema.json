@@ -2,7 +2,7 @@
     "$schema": "http://json-schema.org/draft-04/schema#",
     "type": "object",
     "properties": {
-        "roverId": {
+        "rover_id": {
             "type": "string"
         },
         "state": {
@@ -11,10 +11,10 @@
         "status": {
             "$ref": "#/definitions/rover_status_enum"
         },
-        "battery-percent": {
+        "battery_percent": {
             "type": "integer"
         },
-        "battery-voltage": {
+        "battery_voltage": {
             "type": "number"
         },
         "health": {
@@ -96,11 +96,11 @@
         }
     },
     "required": [
-        "roverId",
+        "rover_id",
         "state",
         "status",
-        "battery-percent",
-        "battery-voltage",
+        "battery_percent",
+        "battery_voltage",
         "health",
         "telemetry"
     ],

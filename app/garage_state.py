@@ -20,7 +20,7 @@ class Garage:
             },
         }
 
-    # data: {"battery-voltage": "12"}
+    # data: {"battery_voltage": "12"}
     # data: {"health/electronics": "degraded"}
     def update_individual(self, data):
         if data:
@@ -31,7 +31,7 @@ class Garage:
                 for health_key in self.GARAGE_state["health"]:
                     if data_key == health_key:
                         self.garage_state["health"][health_key] = data[data_key]
-                        
+
     def update(self, new_GARAGE_state):
         self.garage_state = new_GARAGE_state
         return self

@@ -35,7 +35,7 @@ class Rover:
             }
         }
 
-    # data: {"battery-voltage": "12"}
+    # data: {"battery_voltage": "12"}
     # data: {"health/electronics": "degraded"}
     def update_individual(self, data):
         if data:

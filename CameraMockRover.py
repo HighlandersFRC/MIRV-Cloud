@@ -106,10 +106,11 @@ async def offer(request):
         def sendRoverData():
             print("Sending data")
             data_channel.send(json.dumps({
-                "roverId": ROVER_ID,
+                "rover_id": ROVER_ID,
                 "state": ROVER_STATES[4],
                 "status": ROVER_STATUSES[0],
-                "battery": random.randint(0, 100),
+                "battery_percent": random.randint(0, 100),
+                "battery_voltage": 12.5,
                 "health": {
                     "encoder": HEALTH_STATES[random.randint(0, 3)],
                     "mechanical": HEALTH_STATES[random.randint(0, 3)],
@@ -237,14 +238,14 @@ token = contents.get('access_token')
 
 
 # Send sample Rover Status to Cloud
-sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"roverId": ROVER_ID},
+sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"rover_id": ROVER_ID},
             auth={"token": token}, socketio_path="/ws/socket.io")
 send("data", {
-    "roverId": ROVER_ID,
+    "rover_id": ROVER_ID,
     "state": "connected_idle_roaming",
     "status": "available",
-    "battery-percent": 12,
-    "battery-voltage": 18,
+    "battery_percent": 12,
+    "battery_voltage": 18,
     "health": {
         "electronics": "healthy",
         "drivetrain": "healthy",

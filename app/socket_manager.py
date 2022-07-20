@@ -24,16 +24,17 @@ class MirvSocketManager():
         @self.sm.on('connect')
         async def handle_connect(sid, environ):
             if "HTTP_AUTHORIZATION" not in environ:
-                logger.info(f"Rejected Connection from: {sid}. No Authorization Header present")
+                logger.info(
+                    f"Rejected Connection from: {sid}. No Authorization Header present")
                 await self.sm.emit('exception', 'No Authorization Header present')
-                return 
+                return
             else:
                 token = environ['HTTP_AUTHORIZATION'][6:]
                 if not self.keycloakClient.validate_token(token):
-                    logger.info(f"Rejected Connection from: {sid}. Invalid Token")
+                    logger.info(
+                        f"Rejected Connection from: {sid}. Invalid Token")
                     await self.sm.emit('exception', 'Invalid Token')
                     return
-                
 
             keys = environ.keys()
             temp = {}
@@ -44,7 +45,8 @@ class MirvSocketManager():
             if "HTTP_ROVERID" in environ:
                 rover_id = environ["HTTP_ROVERID"]
                 if ([i for i in self.rovers if i.rover_id == rover_id]):
-                    logger.info(f"Rejecting connection request. Rover id already exists")
+                    logger.info(
+                        f"Rejecting connection request. Rover id already exists")
                     await self.sm.emit('exception', 'ERROR-rover_id already exists')
                     return
                 self.rovers.append(Rover(rover_id, sid))
@@ -54,17 +56,18 @@ class MirvSocketManager():
             if "HTTP_GARAGEID" in environ:
                 garage_id = environ["HTTP_GARAGEID"]
                 if ([i for i in self.garages if i.garage_id == garage_id]):
-                    logger.info(f"Rejecting connection request. Garage id already exists")
+                    logger.info(
+                        f"Rejecting connection request. Garage id already exists")
                     await self.sm.emit('exception', 'ERROR-garageID already exists')
                     return
 
-                
                 self.garages.append(Garage(garage_id, sid))
                 logger.info(f"Connected sid: {sid}")
                 logger.debug(f"{len(self.garages)} Garages(s) connected")
 
             if (not "HTTP_GARAGEID" in environ) and (not "HTTP_ROVERID" in environ):
-                logger.info(f"Rejecting connection request. No DeviceID was specified. Please specify the DeviceID in the headers")
+                logger.info(
+                    f"Rejecting connection request. No DeviceID was specified. Please specify the DeviceID in the headers")
                 await self.sm.emit('exception', 'AUTH-no rover id')
                 return 400
 
@@ -77,12 +80,13 @@ class MirvSocketManager():
                     if r.sid == sid:
                         if new_state.get('rover_id') == r.rover_id:
                             r = r.update(new_state)
-                            logger.info(f"Successfully updated state of rover {r.rover_id}")
+                            logger.info(
+                                f"Successfully updated state of rover {r.rover_id}")
                             return
                         else:
                             logger.info(
                                 f"Incorrect rover id for connection. Expected rover_id: {r.rover_id}")
-                            await sm.emit('exception', 'ERROR-incorrect rover id')
+                            await self.sm.emit('exception', 'ERROR-incorrect rover id')
                             return
                 logger.info(f"Rover not found for sid. Please reconnect")
                 await self.sm.emit('exception', 'RECONNECT-sid not found')
@@ -121,7 +125,7 @@ class MirvSocketManager():
                     self.rovers.pop(i)
                     logger.info(f"Disconnected sid: {sid}")
                     return
-            
+
             for i in range(len(self.garages)):
                 if self.garages[i].sid == sid:
                     self.garages.pop(i)
@@ -131,5 +135,3 @@ class MirvSocketManager():
             logger.info(
                 f"Unable to close connection for sid: {sid}, connection does not exist")
             await self.sm.emit('exception', 'RECONNECT-sid not found')
-
-
