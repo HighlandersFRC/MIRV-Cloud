@@ -23,15 +23,12 @@ class MirvSocketManager():
 
         @self.sm.on('connect')
         async def handle_connect(sid, environ):
-            print("Connection Received")
-            print(environ)
             if "HTTP_AUTHORIZATION" not in environ:
                 logger.info(f"Rejected Connection from: {sid}. No Authorization Header present")
                 await self.sm.emit('exception', 'No Authorization Header present')
                 return 
             else:
                 token = environ['HTTP_AUTHORIZATION'][6:]
-                print("\n\n\n", token)
                 if not self.keycloakClient.validate_token(token):
                     logger.info(f"Rejected Connection from: {sid}. Invalid Token")
                     await self.sm.emit('exception', 'Invalid Token')
@@ -41,7 +38,6 @@ class MirvSocketManager():
             keys = environ.keys()
             temp = {}
             for key in keys:
-                #print(environ[key])
                 temp[key.upper()] = environ[key]
 
             environ = temp
