@@ -15,7 +15,7 @@ import time
 import schedule
 import threading
 
-CLOUD_HOST = "52.185.111.58"
+CLOUD_HOST = "52.185.79.181"
 CLOUD_PORT = 8080
 
 HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
@@ -23,7 +23,7 @@ ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop"]
 ROVER_STATUSES = ["available", "unavailable"]
 ROVER_LOCATION = [-104.969523, 40.474083]
 
-ROVER_ID = "rover_7"
+ROVER_ID = "rover_42"
 SEND_INTERVAL_SECONDS = 30
 
 
@@ -258,7 +258,7 @@ def on_shutdown():
 # Send sample Rover Status to Cloud
 print(f"http://{CLOUD_HOST}:{CLOUD_PORT}/ws")
 sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"roverId": ROVER_ID},
-            auth={"password": None}, socketio_path="/ws/socket.io")
+            auth={"password": "PASSWORD"}, socketio_path="/ws/socket.io")
 send("data", {
     "roverId": ROVER_ID,
     "state": "docked",
