@@ -1,5 +1,6 @@
 HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
-ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop"]
+ROVER_STATES = ["disconnected", "disconnected_fault", "e_stop", "connected_disabled",
+                "connected_idle_roaming", "connected_idle_docked", "connected_fault", "autonomous", "remote_operation"]
 ROVER_STATUSES = ["available", "unavailable"]
 ROVER_LOCATION = [-104.969523, 40.474083]
 
@@ -11,7 +12,7 @@ class Rover:
         self.sid = sid
         self.rover_state = {
             "roverId": self.roverId,
-            "state": ROVER_STATES[0],
+            "state": ROVER_STATES[4],
             "status": ROVER_STATUSES[0],
             "battery-percent": 100,
             "battery-voltage": 14,
