@@ -27,3 +27,4 @@ class MirvKeycloakProvider():
         if not self.get_user_info(token):
             return False
         return True
+
