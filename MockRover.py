@@ -8,6 +8,7 @@ import cv2
 from av import VideoFrame
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
 import requests
+from requests.auth import HTTPBasicAuth
 import numpy
 import math
 import random
@@ -15,16 +16,23 @@ import time
 import schedule
 import threading
 
-CLOUD_HOST = "52.185.79.181"
+# 52.185.79.181
+# 52.185.111.58 7/10
+# 20.221.15.60  7/11 - keycloak
+CLOUD_HOST = "20.236.228.19"
 CLOUD_PORT = 8080
 
 HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
-ROVER_STATES = ["docked", "remoteOperation", "disabled", "eStop"]
+ROVER_STATES = ["disconnected", "disconnected_fault", "e_stop", "connected_disabled",
+                "connected_idle_roaming", "connected_idle_docked", "connected_fault", "autonomous", "remote_operation"]
 ROVER_STATUSES = ["available", "unavailable"]
 ROVER_LOCATION = [-104.969523, 40.474083]
 
-ROVER_ID = "rover_42"
+ROVER_ID = "rover_44"
 SEND_INTERVAL_SECONDS = 30
+
+USERNAME = "rover_dev"
+PASSWORD = "1234"
 
 
 # Setup webtrc connection components
@@ -135,7 +143,7 @@ async def offer(request):
             print("Sending data")
             data_channel.send(json.dumps({
                 "roverId": ROVER_ID,
-                "state": ROVER_STATES[0],
+                "state": ROVER_STATES[4],
                 "status": ROVER_STATUSES[0],
                 "battery": random.randint(0, 100),
                 "health": {
@@ -255,13 +263,21 @@ def on_shutdown():
     sio.disconnect()
 
 
+backend_url = f"http://{CLOUD_HOST}:{CLOUD_PORT}/"
+login_data = {'username': USERNAME, 'password': PASSWORD}
+
+session = requests.Session()
+response = session.post(backend_url + "token", login_data)
+contents = json.loads(response.content.decode('utf-8'))
+token = contents.get('access_token')
+
+
 # Send sample Rover Status to Cloud
-print(f"http://{CLOUD_HOST}:{CLOUD_PORT}/ws")
 sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"roverId": ROVER_ID},
-            auth={"password": "PASSWORD"}, socketio_path="/ws/socket.io")
+            auth={"token": token}, socketio_path="/ws/socket.io")
 send("data", {
     "roverId": ROVER_ID,
-    "state": "docked",
+    "state": "connected_idle_roaming",
     "status": "available",
     "battery-percent": 12,
     "battery-voltage": 18,
