@@ -20,8 +20,6 @@ class Garage:
             },
         }
 
-    # data: {"battery_voltage": "12"}
-    # data: {"health/electronics": "degraded"}
     def update_individual(self, data):
         if data:
             for data_key in data:

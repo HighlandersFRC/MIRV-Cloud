@@ -17,10 +17,8 @@ import schedule
 import threading
 import cv2
 
-# 52.185.79.181
-# 52.185.111.58 7/10
-# 20.221.15.60  7/11 - keycloak
-CLOUD_HOST = "20.236.228.19"
+CLOUD_HOST = "20.12.173.228"
+# CLOUD_HOST = "52.185.95.82"
 CLOUD_PORT = 8080
 
 HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
@@ -29,7 +27,7 @@ ROVER_STATES = ["disconnected", "disconnected_fault", "e_stop", "connected_disab
 ROVER_STATUSES = ["available", "unavailable"]
 ROVER_LOCATION = [-104.969523, 40.474083]
 
-ROVER_ID = "rover_58"
+ROVER_ID = "rover_62"
 SEND_INTERVAL_SECONDS = 30
 
 USERNAME = "rover_dev"
@@ -238,7 +236,7 @@ token = contents.get('access_token')
 
 
 # Send sample Rover Status to Cloud
-sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"rover_id": ROVER_ID},
+sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"ID": ROVER_ID, "device_type": "rover"},
             auth={"token": token}, socketio_path="/ws/socket.io")
 send("data", {
     "rover_id": ROVER_ID,

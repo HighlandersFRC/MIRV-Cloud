@@ -10,7 +10,8 @@ l = logging.getLogger(__name__)
 ROVER_STATE_SCHEMA = {}
 
 
-ROVER_STATE_SCHEMA = json.loads(open('rover_state_schema.json', 'r').read())
+ROVER_STATE_SCHEMA = json.loads(
+    open('./schemas/rover_state_schema.json', 'r').read())
 
 
 def validate_schema(obj, schema):

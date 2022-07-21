@@ -1,7 +1,7 @@
 from fastapi_socketio import SocketManager
 import logging
 import datetime
-from schemas import mirv_schemas
+import schema_validation
 from rover_state import Rover
 from garage_state import Garage
 ISO_8601_FORMAT_STRING = "%Y-%m-%dT%H:%M:%SZ"
@@ -13,6 +13,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+DEVICE_TYPE_ROVER = "ROVER"
+DEVICE_TYPE_GARAGE = "GARAGE"
+
 
 class MirvSocketManager():
     def __init__(self, app, keycloakClient):
@@ -22,60 +25,58 @@ class MirvSocketManager():
         self.keycloakClient = keycloakClient
 
         @self.sm.on('connect')
-        async def handle_connect(sid, environ):
-            if "HTTP_AUTHORIZATION" not in environ:
+        async def handle_connect(sid, environ, auth):
+            # Make all headers uppercase
+            headers = environ
+
+            token = auth.get('token')
+            device_id = headers.get('HTTP_ID')
+            device_type = headers.get('HTTP_DEVICE_TYPE', '').upper()
+
+            if not token:
                 logger.info(
                     f"Rejected Connection from: {sid}. No Authorization Header present")
-                await self.sm.emit('exception', 'No Authorization Header present')
-                return
+                raise ConnectionRefusedError('No Authorization Header present')
             else:
-                token = environ['HTTP_AUTHORIZATION'][6:]
-                if not self.keycloakClient.validate_token(token):
+                if not self.keycloakClient.validate_token_device(token):
                     logger.info(
                         f"Rejected Connection from: {sid}. Invalid Token")
-                    await self.sm.emit('exception', 'Invalid Token')
-                    return
+                    raise ConnectionRefusedError('Invalid Token')
 
-            keys = environ.keys()
-            temp = {}
-            for key in keys:
-                temp[key.upper()] = environ[key]
+            if not device_id:
+                logger.info(
+                    f"Rejecting connection request. No device id was specified")
+                raise ConnectionRefusedError(
+                    'No device id. Please specify a device id with key id')
 
-            environ = temp
-            if "HTTP_ROVERID" in environ:
-                rover_id = environ["HTTP_ROVERID"]
-                if ([i for i in self.rovers if i.rover_id == rover_id]):
+            if device_type.upper() == DEVICE_TYPE_ROVER:
+                if ([i for i in self.rovers if i.rover_id == device_id]):
                     logger.info(
-                        f"Rejecting connection request. Rover id already exists")
-                    await self.sm.emit('exception', 'ERROR-rover_id already exists')
-                    return
-                self.rovers.append(Rover(rover_id, sid))
+                        f"Rejecting connection request. Rover with id {device_id} already exists")
+                    raise ConnectionRefusedError(
+                        f'Rover with id {device_id} already exists')
+                self.rovers.append(Rover(device_id, sid))
                 logger.info(f"Connected sid: {sid}")
                 logger.debug(f"{len(self.rovers)} Rover(s) connected")
-
-            if "HTTP_GARAGEID" in environ:
-                garage_id = environ["HTTP_GARAGEID"]
-                if ([i for i in self.garages if i.garage_id == garage_id]):
+            elif device_type.upper() == DEVICE_TYPE_GARAGE:
+                if ([i for i in self.garages if i.garage_id == device_id]):
                     logger.info(
-                        f"Rejecting connection request. Garage id already exists")
-                    await self.sm.emit('exception', 'ERROR-garageID already exists')
-                    return
+                        f"Rejecting connection request. Garage with id {device_id} already exists")
+                    raise ConnectionRefusedError(
+                        f'Garage with id {device_id} already exists')
 
-                self.garages.append(Garage(garage_id, sid))
+                self.garages.append(Garage(device_id, sid))
                 logger.info(f"Connected sid: {sid}")
                 logger.debug(f"{len(self.garages)} Garages(s) connected")
-
-            if (not "HTTP_GARAGEID" in environ) and (not "HTTP_ROVERID" in environ):
-                logger.info(
-                    f"Rejecting connection request. No DeviceID was specified. Please specify the DeviceID in the headers")
-                await self.sm.emit('exception', 'AUTH-no rover id')
-                return 400
+            else:
+                ConnectionRefusedError(
+                    f'Device type {device_type} not recognized. Expected one of {[DEVICE_TYPE_ROVER, DEVICE_TYPE_GARAGE]}')
 
         @self.sm.on('data')
         async def handle_data(sid, new_state):
             logger.debug(
                 f"Received {new_state} from sid: {sid} at {datetime.datetime.utcnow().strftime(ISO_8601_FORMAT_STRING)}")
-            if mirv_schemas.validate_schema(new_state, mirv_schemas.ROVER_STATE_SCHEMA):
+            if schema_validation.validate_schema(new_state, schema_validation.ROVER_STATE_SCHEMA):
                 for r in self.rovers:
                     if r.sid == sid:
                         if new_state.get('rover_id') == r.rover_id:

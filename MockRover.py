@@ -19,7 +19,7 @@ import threading
 # 52.185.79.181
 # 52.185.111.58 7/10
 # 20.221.15.60  7/11 - keycloak
-CLOUD_HOST = "20.236.228.19"
+CLOUD_HOST = "20.12.173.228"
 CLOUD_PORT = 8080
 
 HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
@@ -274,7 +274,7 @@ token = contents.get('access_token')
 
 
 # Send sample Rover Status to Cloud
-sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"rover_id": ROVER_ID},
+sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"device_type": "GARAGE", "id": ROVER_ID},
             auth={"token": token}, socketio_path="/ws/socket.io")
 send("data", {
     "rover_id": ROVER_ID,

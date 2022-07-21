@@ -15,6 +15,13 @@ docker push jacob6838/mirvapi
 docker --context mirvacicontext run -p 8080:8080 jacob6838/mirvapi
 ```
 
+## Keycloak
+```
+docker login
+docker context create aci mirvacicontext
+docker --context mirvacicontext run -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin -p 8080:8080 jboss/keycloak
+```
+
 ## Auth
 Token Request:
 ```
