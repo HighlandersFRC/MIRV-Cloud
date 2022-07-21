@@ -8,13 +8,9 @@ import cv2
 from av import VideoFrame
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
 import requests
-from requests.auth import HTTPBasicAuth
 import numpy
 import math
 import random
-import time
-import schedule
-import threading
 
 # 52.185.79.181
 # 52.185.111.58 7/10
@@ -28,7 +24,7 @@ ROVER_STATES = ["disconnected", "disconnected_fault", "e_stop", "connected_disab
 ROVER_STATUSES = ["available", "unavailable"]
 ROVER_LOCATION = [-104.969523, 40.474083]
 
-ROVER_ID = "rover_44"
+ROVER_ID = "rover_12"
 SEND_INTERVAL_SECONDS = 30
 
 USERNAME = "rover_dev"
@@ -274,7 +270,7 @@ token = contents.get('access_token')
 
 
 # Send sample Rover Status to Cloud
-sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"device_type": "GARAGE", "id": ROVER_ID},
+sio.connect(f"ws://{CLOUD_HOST}:{CLOUD_PORT}/ws", headers={"ID": ROVER_ID, "device_type": "rover"},
             auth={"token": token}, socketio_path="/ws/socket.io")
 send("data", {
     "rover_id": ROVER_ID,

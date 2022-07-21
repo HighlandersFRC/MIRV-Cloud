@@ -1,0 +1,8 @@
+python-socketio
+opencv-python
+requests
+aiortc
+aiohttp
+asyncio
+av
+schedule

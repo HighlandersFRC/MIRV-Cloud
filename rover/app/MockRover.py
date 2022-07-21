@@ -8,17 +8,15 @@ import cv2
 from av import VideoFrame
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
 import requests
-from requests.auth import HTTPBasicAuth
 import numpy
 import math
 import random
-import time
-import schedule
-import threading
-import cv2
+import os
 
-CLOUD_HOST = "20.12.173.228"
-# CLOUD_HOST = "52.185.95.82"
+# 52.185.79.181
+# 52.185.111.58 7/10
+# 20.221.15.60  7/11 - keycloak
+CLOUD_HOST = os.getenv('CLOUD_ENDPOINT')
 CLOUD_PORT = 8080
 
 HEALTH_STATES = ["unhealthy", "degraded", "healthy", "unavailable"]
@@ -27,13 +25,11 @@ ROVER_STATES = ["disconnected", "disconnected_fault", "e_stop", "connected_disab
 ROVER_STATUSES = ["available", "unavailable"]
 ROVER_LOCATION = [-104.969523, 40.474083]
 
-ROVER_ID = "rover_63"
+ROVER_ID = os.getenv('ROVER_ID')
 SEND_INTERVAL_SECONDS = 30
 
 USERNAME = "rover_dev"
 PASSWORD = "1234"
-
-cap = cv2.VideoCapture(0)
 
 
 # Setup webtrc connection components
@@ -48,21 +44,60 @@ sio = socketio.Client()
 
 
 # Class Describing how to send VideoStreams to the Cloud
-class CameraVideoStreamTrack(VideoStreamTrack):
+class FlagVideoStreamTrack(VideoStreamTrack):
     """
     A video track that returns an animated flag.
     """
 
     def __init__(self):
         super().__init__()  # don't forget this!
+        self.counter = 0
+        height, width = 480, 640
+
+        # generate flag
+        data_bgr = numpy.hstack(
+            [
+                self._create_rectangle(
+                    width=213, height=480, color=(255, 0, 0)
+                ),  # blue
+                self._create_rectangle(
+                    width=214, height=480, color=(255, 255, 255)
+                ),  # white
+                self._create_rectangle(
+                    width=213, height=480, color=(0, 0, 255)),  # red
+            ]
+        )
+
+        # shrink and center it
+        M = numpy.float32([[0.5, 0, width / 4], [0, 0.5, height / 4]])
+        data_bgr = cv2.warpAffine(data_bgr, M, (width, height))
+
+        # compute animation
+        omega = 2 * math.pi / height
+        id_x = numpy.tile(numpy.array(
+            range(width), dtype=numpy.float32), (height, 1))
+        id_y = numpy.tile(
+            numpy.array(range(height), dtype=numpy.float32), (width, 1)
+        ).transpose()
+
+        self.frames = []
+        for k in range(30):
+            phase = 2 * k * math.pi / 30
+            map_x = id_x + 10 * numpy.cos(omega * id_x + phase)
+            map_y = id_y + 10 * numpy.sin(omega * id_x + phase)
+            self.frames.append(
+                VideoFrame.from_ndarray(
+                    cv2.remap(data_bgr, map_x, map_y, cv2.INTER_LINEAR), format="bgr24"
+                )
+            )
 
     async def recv(self):
         pts, time_base = await self.next_timestamp()
-        ret, cv_frame = cap.read()
-        corrected = cv2.cvtColor(cv_frame, cv2.COLOR_RGB2BGR)
-        frame = VideoFrame.from_ndarray(corrected)
+
+        frame = self.frames[self.counter % 30]
         frame.pts = pts
         frame.time_base = time_base
+        self.counter += 1
         return frame
 
     def _create_rectangle(self, width, height, color):
@@ -85,7 +120,7 @@ async def offer(request):
         sdp=params["offer"]["sdp"], type=params["offer"]["type"])
 
     pc = RTCPeerConnection()
-    pc.addTrack(CameraVideoStreamTrack())
+    pc.addTrack(FlagVideoStreamTrack())
     pc_id = "PeerConnection(%s)" % uuid.uuid4()
     pcs.add(pc)
 
@@ -218,7 +253,7 @@ def send(type: str, msg):
     sio.emit(type, msg)
 
 
-def on_shutdown(app):
+def on_shutdown():
     # close peer connections
     coros = [pc.close() for pc in pcs]
     asyncio.gather(*coros)
@@ -242,7 +277,7 @@ send("data", {
     "rover_id": ROVER_ID,
     "state": "connected_idle_roaming",
     "status": "available",
-    "battery_percent": 12,
+    "battery_percent": 13,
     "battery_voltage": 18,
     "health": {
         "electronics": "healthy",
@@ -259,7 +294,7 @@ send("data", {
             "long": -105
         },
         "heading": 90,
-        "speed": 0
+        "speed": 12
     }
 })
 
