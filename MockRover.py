@@ -28,7 +28,7 @@ ROVER_STATES = ["disconnected", "disconnected_fault", "e_stop", "connected_disab
 ROVER_STATUSES = ["available", "unavailable"]
 ROVER_LOCATION = [-104.969523, 40.474083]
 
-ROVER_ID = "rover_44"
+ROVER_ID = "rover_35"
 SEND_INTERVAL_SECONDS = 30
 
 USERNAME = "rover_dev"
